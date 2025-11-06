@@ -70,3 +70,20 @@ export interface ProjectionResult {
   annualSummaries: AnnualSummary[]
   calculationTimeMs: number
 }
+
+// Type guards
+export function isLiquidAsset(account: CapitalAccount): account is LiquidAsset {
+  return account.assetType === 'liquid'
+}
+
+export function isFixedAsset(account: CapitalAccount): account is FixedAsset {
+  return account.assetType === 'fixed'
+}
+
+export function isAsset(item: CapitalAccount | CashFlow): item is CapitalAccount {
+  return 'assetType' in item
+}
+
+export function isCashFlow(item: CapitalAccount | CashFlow): item is CashFlow {
+  return 'type' in item && ('income' === item.type || 'expense' === item.type)
+}

@@ -52,6 +52,31 @@ export const usePlannerStore = defineStore('planner', () => {
       birthDate.value !== '' && (capitalAccounts.value.length > 0 || cashFlows.value.length > 0),
   )
 
+  // New computed properties for unified list
+  const allItems = computed(() => {
+    const items: (CapitalAccount | CashFlow)[] = [
+      ...capitalAccounts.value,
+      ...cashFlows.value,
+    ]
+    return items
+  })
+
+  const totalAssets = computed(() =>
+    capitalAccounts.value.reduce((sum, account) => sum + account.amount, 0),
+  )
+
+  const totalIncome = computed(() =>
+    cashFlows.value
+      .filter((cf) => cf.type === 'income')
+      .reduce((sum, cf) => sum + cf.monthlyAmount * 12, 0),
+  )
+
+  const totalExpenses = computed(() =>
+    cashFlows.value
+      .filter((cf) => cf.type === 'expense')
+      .reduce((sum, cf) => sum + cf.monthlyAmount * 12, 0),
+  )
+
   // Actions
   function setBirthDate(date: string) {
     birthDate.value = date
@@ -63,7 +88,9 @@ export const usePlannerStore = defineStore('planner', () => {
     recalculate()
   }
 
-  function addCapitalAccount(account: Omit<CapitalAccount, 'id'>) {
+  function addCapitalAccount(
+    account: Omit<LiquidAsset, 'id'> | Omit<FixedAsset, 'id'>,
+  ) {
     capitalAccounts.value.push({
       ...account,
       id: crypto.randomUUID(),
@@ -161,6 +188,15 @@ export const usePlannerStore = defineStore('planner', () => {
     storageService.clearProfile()
   }
 
+  // Helper getters
+  function getCapitalAccountById(id: string): CapitalAccount | undefined {
+    return capitalAccounts.value.find((a) => a.id === id)
+  }
+
+  function getCashFlowById(id: string): CashFlow | undefined {
+    return cashFlows.value.find((cf) => cf.id === id)
+  }
+
   return {
     // State
     birthDate,
@@ -173,6 +209,10 @@ export const usePlannerStore = defineStore('planner', () => {
     currentAge,
     totalCapital,
     hasData,
+    allItems,
+    totalAssets,
+    totalIncome,
+    totalExpenses,
     // Actions
     setBirthDate,
     setLiquidAssetsInterestRate,
@@ -186,5 +226,8 @@ export const usePlannerStore = defineStore('planner', () => {
     saveToStorage,
     loadFromStorage,
     clearAll,
+    // Helpers
+    getCapitalAccountById,
+    getCashFlowById,
   }
 })

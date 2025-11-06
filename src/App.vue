@@ -6,41 +6,7 @@
     </header>
 
     <main>
-      <div class="container">
-        <div class="input-section">
-          <BirthDateInput
-            v-model="store.birthDate"
-            :current-age="store.currentAge"
-            @update:model-value="handleBirthDateChange"
-          />
-          <CapitalAccountsManager
-            :accounts="store.capitalAccounts"
-            :liquid-assets-interest-rate="store.liquidAssetsInterestRate"
-            @add="store.addCapitalAccount"
-            @update="store.updateCapitalAccount"
-            @remove="store.removeCapitalAccount"
-            @update-liquid-rate="store.setLiquidAssetsInterestRate"
-          />
-          <CashFlowManager
-            :cash-flows="store.cashFlows"
-            @add="store.addCashFlow"
-            @update="store.updateCashFlow"
-            @remove="store.removeCashFlow"
-          />
-        </div>
-
-        <div v-if="store.projectionResult" class="results-section">
-          <NetWorthChart
-            :annual-summaries="store.projectionResult.annualSummaries"
-            :calculation-time="store.projectionResult.calculationTimeMs"
-          />
-          <AnnualBreakdownTable :annual-summaries="store.projectionResult.annualSummaries" />
-        </div>
-
-        <div v-else-if="store.hasData" class="no-results">
-          <p>Enter your data above to see your financial projections.</p>
-        </div>
-      </div>
+      <router-view />
     </main>
   </div>
 </template>
@@ -48,11 +14,6 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue'
 import { usePlannerStore } from './stores/planner'
-import BirthDateInput from './components/BirthDateInput.vue'
-import CapitalAccountsManager from './components/CapitalAccountsManager.vue'
-import CashFlowManager from './components/CashFlowManager.vue'
-import NetWorthChart from './components/NetWorthChart.vue'
-import AnnualBreakdownTable from './components/AnnualBreakdownTable.vue'
 
 const store = usePlannerStore()
 
@@ -60,11 +21,6 @@ onMounted(() => {
   // Load saved data on startup
   store.loadFromStorage()
 })
-
-function handleBirthDateChange(date: string) {
-  store.setBirthDate(date)
-  store.saveToStorage()
-}
 
 // Auto-save when data changes
 watch(
