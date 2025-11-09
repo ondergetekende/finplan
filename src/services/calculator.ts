@@ -58,6 +58,7 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
   const { birthDate, capitalAccounts, liquidAssetsInterestRate } = profile
   // Support both legacy 'expenses' and new 'cashFlows' field
   const cashFlows = profile.cashFlows || []
+  const debts = profile.debts || []
 
   // Separate liquid and fixed assets
   const liquidAccounts = capitalAccounts.filter((account) => account instanceof LiquidAsset)
@@ -75,14 +76,52 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
     balance: account.amount,
   }))
 
-  // Calculate total starting capital
-  const totalCapital =
-    liquidAssetsBalance + fixedAssetBalances.reduce((sum, asset) => sum + asset.balance, 0)
-
   const monthlyProjections: MonthlyProjection[] = []
 
   // Start from today
   const today = new Date()
+
+  // Start from the beginning of current month
+  const projectionStart = new Date(today.getFullYear(), today.getMonth(), 1)
+
+  // Track each debt separately with its current balance
+  // For debts that started in the past, calculate the balance at simulation start
+  const debtBalances = debts.map((debt) => {
+    let currentBalance = debt.amount
+
+    // If debt has a start date in the past, calculate how much would have been paid off
+    const debtStartDate = debt.startDate ? new Date(debt.startDate) : null
+    const repaymentStartDate = debt.repaymentStartDate
+      ? new Date(debt.repaymentStartDate)
+      : debtStartDate
+
+    if (repaymentStartDate && repaymentStartDate < projectionStart) {
+      // Calculate months between repayment start and simulation start
+      const monthsPassed =
+        (projectionStart.getFullYear() - repaymentStartDate.getFullYear()) * 12 +
+        (projectionStart.getMonth() - repaymentStartDate.getMonth())
+
+      if (monthsPassed > 0) {
+        // Use the debt's calculateProjectedBalance to determine current balance
+        currentBalance = debt.calculateProjectedBalance(debt.amount, monthsPassed)
+      }
+    }
+
+    return {
+      debt,
+      balance: currentBalance,
+      isPaidOff: currentBalance <= 0,
+    }
+  })
+
+  // Store initial debt total before it gets mutated
+  const initialTotalDebt = debtBalances.reduce((sum, d) => sum + d.balance, 0)
+
+  // Calculate total starting capital (net worth = assets - debts)
+  const totalCapital =
+    liquidAssetsBalance +
+    fixedAssetBalances.reduce((sum, asset) => sum + asset.balance, 0) -
+    initialTotalDebt
 
   // Calculate end date (when user turns 100)
   const birth = new Date(birthDate)
@@ -91,9 +130,6 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
   // Calculate total months from now until age 100
   const monthsFromNow =
     (endDate.getFullYear() - today.getFullYear()) * 12 + (endDate.getMonth() - today.getMonth())
-
-  // Start from the beginning of current month
-  const projectionStart = new Date(today.getFullYear(), today.getMonth(), 1)
 
   for (let monthIndex = 0; monthIndex < monthsFromNow; monthIndex++) {
     const currentDate = new Date(
@@ -116,6 +152,87 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
       asset.balance += valueChange
     }
 
+    // Process debt payments (after interest on liquid assets)
+    let monthlyDebtInterest = 0
+    let monthlyDebtPrincipal = 0
+
+    for (const debtTracking of debtBalances) {
+      // Skip if debt is already paid off (balance is zero or less)
+      if (debtTracking.balance <= 0) {
+        debtTracking.balance = 0
+        debtTracking.isPaidOff = true
+        continue
+      }
+
+      // Skip if debt is marked as paid off but still has a remaining balance (e.g., finalBalance > 0)
+      if (debtTracking.isPaidOff) {
+        continue
+      }
+
+      const debt = debtTracking.debt
+
+      // Check if we've reached or passed the end date - trigger final payment
+      if (debt.endDate) {
+        const endDate = new Date(debt.endDate)
+        // If current date is at or after end date, trigger final payment
+        if (currentDate >= endDate) {
+          // Use the debt's calculateMonthlyPayment with monthsRemaining=1 to get final payment
+          const payment = debt.calculateMonthlyPayment(debtTracking.balance, 1)
+
+          // Check if sufficient liquid assets to make payment
+          if (liquidAssetsBalance >= payment.totalPayment) {
+            liquidAssetsBalance -= payment.totalPayment
+            debtTracking.balance -= payment.principal
+            monthlyDebtInterest += payment.interest
+            monthlyDebtPrincipal += payment.principal
+
+            // Ensure balance doesn't go below finalBalance
+            debtTracking.balance = Math.max(debtTracking.balance, debt.finalBalance ?? 0)
+
+            // Mark as paid off only if balance is zero
+            if (debtTracking.balance <= 0) {
+              debtTracking.balance = 0
+              debtTracking.isPaidOff = true
+            }
+          }
+          continue
+        }
+      }
+
+      // Check if repayment is active at this date
+      if (!debt.isRepaymentActive(currentDate)) {
+        continue
+      }
+
+      // Calculate months remaining until end date (if specified)
+      let monthsRemaining: number | undefined
+      if (debt.endDate) {
+        const endDate = new Date(debt.endDate)
+        const monthsDiff =
+          (endDate.getFullYear() - currentDate.getFullYear()) * 12 +
+          (endDate.getMonth() - currentDate.getMonth())
+        monthsRemaining = Math.max(1, monthsDiff)
+      }
+
+      // Delegate payment calculation to the debt model
+      const payment = debt.calculateMonthlyPayment(debtTracking.balance, monthsRemaining)
+
+      // Check if sufficient liquid assets to make payment
+      if (liquidAssetsBalance >= payment.totalPayment) {
+        liquidAssetsBalance -= payment.totalPayment
+        debtTracking.balance -= payment.principal
+        monthlyDebtInterest += payment.interest
+        monthlyDebtPrincipal += payment.principal
+
+        // Mark as paid off if balance is zero or negative
+        if (debtTracking.balance <= 0) {
+          debtTracking.balance = 0
+          debtTracking.isPaidOff = true
+        }
+      }
+      // If insufficient funds, skip payment (debt remains)
+    }
+
     // Calculate income and expenses for this month
     let monthlyIncome = 0
     let monthlyExpenses = 0
@@ -136,7 +253,8 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
 
     // Calculate totals
     const fixedAssetsTotal = fixedAssetBalances.reduce((sum, asset) => sum + asset.balance, 0)
-    const currentBalance = liquidAssetsBalance + fixedAssetsTotal
+    const totalDebt = debtBalances.reduce((sum, d) => sum + d.balance, 0)
+    const currentBalance = liquidAssetsBalance + fixedAssetsTotal - totalDebt
 
     monthlyProjections.push({
       date: formatYearMonth(currentDate),
@@ -144,8 +262,11 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
       balance: currentBalance,
       liquidAssets: liquidAssetsBalance,
       fixedAssets: fixedAssetsTotal,
+      totalDebt,
       income: monthlyIncome,
       expenses: monthlyExpenses,
+      debtInterestPaid: monthlyDebtInterest,
+      debtPrincipalPaid: monthlyDebtPrincipal,
     })
   }
 
@@ -187,12 +308,18 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
     const startingFixedAssets = previousProjection
       ? previousProjection.fixedAssets
       : fixedAccounts.reduce((sum, account) => sum + account.amount, 0)
+    const startingTotalDebt = previousProjection
+      ? previousProjection.totalDebt
+      : initialTotalDebt
 
     const totalIncome = projections.reduce((sum, p) => sum + p.income, 0)
     const totalExpenses = projections.reduce((sum, p) => sum + p.expenses, 0)
+    const totalDebtInterestPaid = projections.reduce((sum, p) => sum + p.debtInterestPaid, 0)
+    const totalDebtPrincipalPaid = projections.reduce((sum, p) => sum + p.debtPrincipalPaid, 0)
     const endingBalance = lastProjection.balance
     const endingLiquidAssets = lastProjection.liquidAssets
     const endingFixedAssets = lastProjection.fixedAssets
+    const endingTotalDebt = lastProjection.totalDebt
 
     annualSummaries.push({
       year,
@@ -200,11 +327,15 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
       startingBalance,
       startingLiquidAssets,
       startingFixedAssets,
+      startingTotalDebt,
       totalIncome,
       totalExpenses,
+      totalDebtInterestPaid,
+      totalDebtPrincipalPaid,
       endingBalance,
       endingLiquidAssets,
       endingFixedAssets,
+      endingTotalDebt,
     })
   }
 

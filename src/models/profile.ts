@@ -5,6 +5,7 @@
 import type { CapitalAccount } from './assets'
 import { LiquidAsset, FixedAsset } from './assets'
 import { CashFlow } from './cashflow'
+import { Debt } from './debt'
 
 /**
  * User's complete financial profile
@@ -13,13 +14,15 @@ export class UserProfile {
   readonly birthDate: string // ISO date string (YYYY-MM-DD)
   readonly capitalAccounts: CapitalAccount[]
   readonly cashFlows: CashFlow[]
+  readonly debts: Debt[]
   readonly liquidAssetsInterestRate: number // Shared annual interest rate for all liquid assets (percentage)
 
   constructor(
     birthDate: string,
     capitalAccounts: CapitalAccount[],
     cashFlows: CashFlow[],
-    liquidAssetsInterestRate: number
+    liquidAssetsInterestRate: number,
+    debts: Debt[] = []
   ) {
     if (!birthDate || !this.isValidDate(birthDate)) {
       throw new Error('UserProfile birthDate must be a valid ISO date string (YYYY-MM-DD)')
@@ -28,6 +31,7 @@ export class UserProfile {
     this.birthDate = birthDate
     this.capitalAccounts = capitalAccounts
     this.cashFlows = cashFlows
+    this.debts = debts
     this.liquidAssetsInterestRate = liquidAssetsInterestRate
   }
 
@@ -87,19 +91,28 @@ export class UserProfile {
   }
 
   /**
+   * Get total debt
+   */
+  getTotalDebt(): number {
+    return this.debts.reduce((sum, debt) => sum + debt.amount, 0)
+  }
+
+  /**
    * Create a copy of this profile with updated properties
    */
   with(updates: {
     birthDate?: string
     capitalAccounts?: CapitalAccount[]
     cashFlows?: CashFlow[]
+    debts?: Debt[]
     liquidAssetsInterestRate?: number
   }): UserProfile {
     return new UserProfile(
       updates.birthDate ?? this.birthDate,
       updates.capitalAccounts ?? this.capitalAccounts,
       updates.cashFlows ?? this.cashFlows,
-      updates.liquidAssetsInterestRate ?? this.liquidAssetsInterestRate
+      updates.liquidAssetsInterestRate ?? this.liquidAssetsInterestRate,
+      updates.debts ?? this.debts
     )
   }
 
@@ -111,6 +124,7 @@ export class UserProfile {
       birthDate: this.birthDate,
       capitalAccounts: this.capitalAccounts.map((acc) => acc.toJSON()),
       cashFlows: this.cashFlows.map((cf) => cf.toJSON()),
+      debts: this.debts.map((debt) => debt.toJSON()),
       liquidAssetsInterestRate: this.liquidAssetsInterestRate,
     }
   }
@@ -133,11 +147,15 @@ export class UserProfile {
 
     const cashFlows = (data.cashFlows || []).map((cf: any) => CashFlow.fromJSON(cf))
 
+    // Handle backward compatibility - default to empty array if debts not present
+    const debts = (data.debts || []).map((debt: any) => Debt.fromJSON(debt))
+
     return new UserProfile(
       data.birthDate || new Date().toISOString().split('T')[0],
       capitalAccounts,
       cashFlows,
-      data.liquidAssetsInterestRate || 0
+      data.liquidAssetsInterestRate || 0,
+      debts
     )
   }
 }
@@ -151,8 +169,11 @@ export interface MonthlyProjection {
   balance: number
   liquidAssets: number
   fixedAssets: number
+  totalDebt: number
   income: number
   expenses: number
+  debtInterestPaid: number
+  debtPrincipalPaid: number
 }
 
 /**
@@ -164,11 +185,15 @@ export interface AnnualSummary {
   startingBalance: number
   startingLiquidAssets: number
   startingFixedAssets: number
+  startingTotalDebt: number
   totalIncome: number
   totalExpenses: number
+  totalDebtInterestPaid: number
+  totalDebtPrincipalPaid: number
   endingBalance: number
   endingLiquidAssets: number
   endingFixedAssets: number
+  endingTotalDebt: number
 }
 
 /**

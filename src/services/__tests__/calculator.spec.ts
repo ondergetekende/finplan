@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { calculateProjections } from '../calculator'
-import { UserProfile, LiquidAsset, FixedAsset, CashFlow } from '@/models'
+import { UserProfile, LiquidAsset, FixedAsset, CashFlow, Debt } from '@/models'
 
 // Helper to create test profiles using classes
 function createTestProfile(data: {
@@ -648,5 +648,423 @@ describe('Financial Calculator', () => {
     expect(firstYear?.startingFixedAssets).toBe(300000)
     expect(firstYear?.endingLiquidAssets).toBeGreaterThan(100000) // Growth from interest
     expect(firstYear?.endingFixedAssets).toBeGreaterThan(300000) // Growth from appreciation
+  })
+
+  describe('Debt Calculations', () => {
+    it('should handle linear debt with fixed principal payment', () => {
+      const debt = new Debt({
+        name: 'Student Loan',
+        amount: 10000,
+        annualInterestRate: 5,
+        monthlyPrincipalPayment: 500,
+        startDate: '2025-01-01',
+      })
+
+      const profile = new UserProfile(
+        '1995-01-01',
+        [new LiquidAsset('1', 'Savings', 50000)],
+        [],
+        5,
+        [debt],
+      )
+
+      const result = calculateProjections(profile)
+      const firstYear = result.annualSummaries[0]
+
+      // Should have debt at start
+      expect(firstYear?.startingTotalDebt).toBe(10000)
+
+      // After 11 months (Feb-Dec 2025), principal paid should be ~5500 (500 * 11)
+      expect(firstYear?.totalDebtPrincipalPaid).toBeCloseTo(5500, -2)
+
+      // Interest should be calculated on declining balance
+      // Month 1: 10000 * 0.05/12 ≈ 41.67, Month 2: 9500 * 0.05/12 ≈ 39.58, etc.
+      expect(firstYear?.totalDebtInterestPaid).toBeGreaterThan(0)
+      expect(firstYear?.totalDebtInterestPaid).toBeLessThan(500)
+
+      // Ending debt should be less than starting
+      expect(firstYear?.endingTotalDebt).toBeLessThan(firstYear!.startingTotalDebt)
+    })
+
+    it('should handle annualized debt with fixed total payment', () => {
+      const debt = new Debt({
+        name: 'Car Loan',
+        amount: 20000,
+        annualInterestRate: 6,
+        monthlyPayment: 600,
+        startDate: '2025-01-01',
+      })
+
+      const profile = new UserProfile(
+        '1995-01-01',
+        [new LiquidAsset('1', 'Savings', 100000)],
+        [],
+        5,
+        [debt],
+      )
+
+      const result = calculateProjections(profile)
+      const firstYear = result.annualSummaries[0]
+
+      // Should have debt at start
+      expect(firstYear?.startingTotalDebt).toBe(20000)
+
+      // Total payments should be 600 * 11 = 6600 (11 months)
+      const totalPayments =
+        firstYear!.totalDebtPrincipalPaid + firstYear!.totalDebtInterestPaid
+      expect(totalPayments).toBeCloseTo(6600, -2)
+
+      // Ending debt should be significantly reduced
+      expect(firstYear?.endingTotalDebt).toBeLessThan(15000)
+    })
+
+    it('should handle interest-only debt', () => {
+      const debt = new Debt({
+        name: 'Interest-Only Mortgage',
+        amount: 100000,
+        annualInterestRate: 4,
+        finalBalance: 0,
+        startDate: '2025-01-01',
+        endDate: '2030-01-01',
+      })
+
+      const profile = new UserProfile(
+        '1995-01-01',
+        [new LiquidAsset('1', 'Savings', 200000)],
+        [],
+        5,
+        [debt],
+      )
+
+      const result = calculateProjections(profile)
+      const firstYear = result.annualSummaries[0]
+
+      // Should have debt at start
+      expect(firstYear?.startingTotalDebt).toBe(100000)
+
+      // No principal should be paid in first year (interest-only)
+      expect(firstYear?.totalDebtPrincipalPaid).toBe(0)
+
+      // Interest should be paid: 100000 * 0.04/12 * 11 ≈ 3667
+      expect(firstYear?.totalDebtInterestPaid).toBeCloseTo(3667, -2)
+
+      // Debt balance should remain unchanged (interest-only)
+      expect(firstYear?.endingTotalDebt).toBe(100000)
+
+      // Check that balloon payment happens at end date
+      const year2030 = result.annualSummaries.find((s) => s.year === 2030)
+      expect(year2030?.endingTotalDebt).toBe(0) // Should be paid off
+    })
+
+    it('should handle debt that started in the past', () => {
+      // Debt started 6 months ago
+      const debt = new Debt({
+        name: 'Old Loan',
+        amount: 12000,
+        annualInterestRate: 5,
+        monthlyPrincipalPayment: 500,
+        startDate: '2024-07-01',
+      })
+
+      const profile = new UserProfile(
+        '1995-01-01',
+        [new LiquidAsset('1', 'Savings', 50000)],
+        [],
+        5,
+        [debt],
+      )
+
+      const result = calculateProjections(profile)
+      const firstYear = result.annualSummaries[0]
+
+      // Should have calculated current balance after 6 months of payments
+      // 12000 - (500 * 6) = 9000
+      expect(firstYear?.startingTotalDebt).toBeCloseTo(9000, 0)
+
+      // Not the original debt amount
+      expect(firstYear?.startingTotalDebt).not.toBe(12000)
+    })
+
+    it('should handle debt with separate repayment start date', () => {
+      // Debt exists but repayment hasn't started yet
+      const debt = new Debt({
+        name: 'Deferred Student Loan',
+        amount: 15000,
+        annualInterestRate: 4,
+        monthlyPrincipalPayment: 300,
+        startDate: '2024-01-01',
+        repaymentStartDate: '2026-01-01',
+      })
+
+      const profile = new UserProfile(
+        '1995-01-01',
+        [new LiquidAsset('1', 'Savings', 50000)],
+        [],
+        5,
+        [debt],
+      )
+
+      const result = calculateProjections(profile)
+      const firstYear = result.annualSummaries[0]
+
+      // Debt exists but no principal payments yet in 2025
+      expect(firstYear?.startingTotalDebt).toBe(15000)
+      expect(firstYear?.totalDebtPrincipalPaid).toBe(0)
+      expect(firstYear?.endingTotalDebt).toBe(15000)
+
+      // Check 2026 - payments should start
+      const year2026 = result.annualSummaries.find((s) => s.year === 2026)
+      expect(year2026?.totalDebtPrincipalPaid).toBeGreaterThan(0)
+    })
+
+    it('should handle debt that was partially paid off in the past', () => {
+      // Debt started 12 months ago with 500/month payment
+      const debt = new Debt({
+        name: 'Past Loan',
+        amount: 10000,
+        annualInterestRate: 6,
+        monthlyPrincipalPayment: 500,
+        startDate: '2024-01-01',
+      })
+
+      const profile = new UserProfile(
+        '1995-01-01',
+        [new LiquidAsset('1', 'Savings', 50000)],
+        [],
+        5,
+        [debt],
+      )
+
+      const result = calculateProjections(profile)
+      const firstYear = result.annualSummaries[0]
+
+      // After 12 months: 10000 - (500 * 12) = 4000
+      expect(firstYear?.startingTotalDebt).toBeCloseTo(4000, 0)
+
+      // Should be paid off within the first year since only 4000 / 500 = 8 months remain
+      expect(firstYear?.endingTotalDebt).toBe(0)
+    })
+
+    it('should handle multiple debts simultaneously', () => {
+      const debt1 = new Debt({
+        name: 'Loan 1',
+        amount: 5000,
+        annualInterestRate: 5,
+        monthlyPrincipalPayment: 250,
+        startDate: '2025-01-01',
+      })
+
+      const debt2 = new Debt({
+        name: 'Loan 2',
+        amount: 8000,
+        annualInterestRate: 6,
+        monthlyPayment: 300,
+        startDate: '2025-01-01',
+      })
+
+      const profile = new UserProfile(
+        '1995-01-01',
+        [new LiquidAsset('1', 'Savings', 100000)],
+        [],
+        5,
+        [debt1, debt2],
+      )
+
+      const result = calculateProjections(profile)
+      const firstYear = result.annualSummaries[0]
+
+      // Should have both debts at start
+      expect(firstYear?.startingTotalDebt).toBe(13000)
+
+      // Both should make payments
+      expect(firstYear?.totalDebtPrincipalPaid).toBeGreaterThan(0)
+      expect(firstYear?.totalDebtInterestPaid).toBeGreaterThan(0)
+
+      // Total debt should decrease
+      expect(firstYear?.endingTotalDebt).toBeLessThan(firstYear!.startingTotalDebt)
+    })
+
+    it('should reduce liquid assets when making debt payments', () => {
+      const debt = new Debt({
+        name: 'Loan',
+        amount: 10000,
+        annualInterestRate: 5,
+        monthlyPrincipalPayment: 500,
+        startDate: '2025-01-01',
+      })
+
+      const profile = new UserProfile(
+        '1995-01-01',
+        [new LiquidAsset('1', 'Savings', 50000)],
+        [],
+        0, // No interest on liquid assets
+        [debt],
+      )
+
+      const result = calculateProjections(profile)
+      const firstYear = result.annualSummaries[0]
+
+      // Liquid assets should decrease due to debt payments
+      // Principal: ~5500 (500 * 11), Interest: ~250 (declining balance)
+      const expectedDecrease =
+        firstYear!.totalDebtPrincipalPaid + firstYear!.totalDebtInterestPaid
+      expect(firstYear?.startingLiquidAssets - firstYear!.endingLiquidAssets).toBeCloseTo(
+        expectedDecrease,
+        -2,
+      )
+    })
+
+    it('should not affect fixed assets when paying debt', () => {
+      const debt = new Debt({
+        name: 'Loan',
+        amount: 10000,
+        annualInterestRate: 5,
+        monthlyPrincipalPayment: 500,
+        startDate: '2025-01-01',
+      })
+
+      const profile = new UserProfile(
+        '1995-01-01',
+        [
+          new LiquidAsset('1', 'Savings', 50000),
+          new FixedAsset('2', 'House', 200000, 3),
+        ],
+        [],
+        0,
+        [debt],
+      )
+
+      const result = calculateProjections(profile)
+      const firstYear = result.annualSummaries[0]
+
+      // Fixed assets should only change due to appreciation, not debt payments
+      // 200000 * (1 + 0.03/12)^12 ≈ 206083
+      expect(firstYear?.endingFixedAssets).toBeCloseTo(206083, 0)
+    })
+
+    it('should calculate net worth correctly with debt', () => {
+      const debt = new Debt({
+        name: 'Loan',
+        amount: 20000,
+        annualInterestRate: 5,
+        monthlyPrincipalPayment: 500,
+        startDate: '2025-01-01',
+      })
+
+      const profile = new UserProfile(
+        '1995-01-01',
+        [new LiquidAsset('1', 'Savings', 50000)],
+        [],
+        5,
+        [debt],
+      )
+
+      const result = calculateProjections(profile)
+      const firstYear = result.annualSummaries[0]
+
+      // Net worth = liquid assets + fixed assets - debt
+      const calculatedNetWorth =
+        firstYear!.endingLiquidAssets + firstYear!.endingFixedAssets - firstYear!.endingTotalDebt
+      expect(firstYear?.endingBalance).toBeCloseTo(calculatedNetWorth, 0)
+    })
+
+    it('should skip debt payment if insufficient liquid assets', () => {
+      const debt = new Debt({
+        name: 'Large Loan',
+        amount: 50000,
+        annualInterestRate: 5,
+        monthlyPrincipalPayment: 5000, // Very high payment
+        startDate: '2025-01-01',
+      })
+
+      const profile = new UserProfile(
+        '1995-01-01',
+        [new LiquidAsset('1', 'Savings', 10000)], // Not enough to make payments
+        [],
+        0,
+        [debt],
+      )
+
+      const result = calculateProjections(profile)
+      const firstYear = result.annualSummaries[0]
+
+      // Should only make 1 payment (first month) before running out of money
+      expect(firstYear?.totalDebtPrincipalPaid).toBeCloseTo(5000, 0)
+
+      // Liquid assets should have some remaining after first payment
+      // 10000 - (5000 + interest) ≈ 4791
+      expect(firstYear?.endingLiquidAssets).toBeGreaterThan(4000)
+      expect(firstYear?.endingLiquidAssets).toBeLessThan(5000)
+
+      // Debt should not be fully paid off (only 1 payment made)
+      expect(firstYear?.endingTotalDebt).toBeCloseTo(45000, 0)
+    })
+
+    it('should handle debt with end date balloon payment', () => {
+      const debt = new Debt({
+        name: 'Balloon Loan',
+        amount: 50000,
+        annualInterestRate: 4,
+        finalBalance: 30000, // Pay down to 30k, then balloon
+        startDate: '2025-01-01',
+        endDate: '2027-01-01',
+      })
+
+      const profile = new UserProfile(
+        '1995-01-01',
+        [new LiquidAsset('1', 'Savings', 100000)],
+        [],
+        5,
+        [debt],
+      )
+
+      const result = calculateProjections(profile)
+
+      // Check 2025: only interest payments
+      const year2025 = result.annualSummaries.find((s) => s.year === 2025)
+      expect(year2025?.totalDebtPrincipalPaid).toBe(0)
+      expect(year2025?.endingTotalDebt).toBe(50000)
+
+      // Check 2026: balloon payment should occur in Dec 2026 (last month before end date)
+      const year2026 = result.annualSummaries.find((s) => s.year === 2026)
+      expect(year2026?.endingTotalDebt).toBe(30000) // Should be at final balance after balloon payment
+      expect(year2026?.totalDebtPrincipalPaid).toBeCloseTo(20000, -2) // Balloon payment: 50000 - 30000
+
+      // Check 2027: no more payments after end date is reached
+      const year2027 = result.annualSummaries.find((s) => s.year === 2027)
+      expect(year2027?.startingTotalDebt).toBe(30000) // Starts at final balance
+      expect(year2027?.totalDebtPrincipalPaid).toBe(0) // No principal payments
+      expect(year2027?.endingTotalDebt).toBe(30000) // Remains at final balance
+    })
+
+    it('should handle debt that fully pays off mid-simulation', () => {
+      const debt = new Debt({
+        name: 'Short Loan',
+        amount: 6000,
+        annualInterestRate: 5,
+        monthlyPrincipalPayment: 500,
+        startDate: '2025-01-01',
+      })
+
+      const profile = new UserProfile(
+        '1995-01-01',
+        [new LiquidAsset('1', 'Savings', 50000)],
+        [],
+        5,
+        [debt],
+      )
+
+      const result = calculateProjections(profile)
+      const firstYear = result.annualSummaries[0]
+
+      // Debt should be almost paid off (6000 / 500 = 12 months, but only 11 months of payments in first year)
+      // 6000 - (500 * 11) = 500 remaining
+      expect(firstYear?.endingTotalDebt).toBe(500)
+
+      // Check 2026 pays off the remaining 500
+      const year2026 = result.annualSummaries.find((s) => s.year === 2026)
+      expect(year2026?.startingTotalDebt).toBe(500)
+      expect(year2026?.endingTotalDebt).toBe(0) // Should be fully paid after 1 month
+    })
   })
 })

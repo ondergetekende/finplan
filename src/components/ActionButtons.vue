@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { ITEM_TYPES, getItemTypeButtonLabel } from '@/config/itemTypes'
+import { ITEM_TYPES, getItemTypeButtonLabel, type ItemTypeDefinition } from '@/config/itemTypes'
 
 const router = useRouter()
 
-function handleAddItem(typeId: string, category: 'asset' | 'cashflow') {
+function handleAddItem(typeId: string, category: ItemTypeDefinition['category']) {
   if (category === 'asset') {
     router.push({ name: 'new-asset', params: { typeId } })
-  } else {
+  } else if (category === 'cashflow') {
     router.push({ name: 'new-cashflow', params: { typeId } })
+  } else if (category === 'debt') {
+    router.push({ name: 'new-debt', params: { typeId } })
   }
 }
 </script>

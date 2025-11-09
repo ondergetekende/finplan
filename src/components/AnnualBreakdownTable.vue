@@ -8,10 +8,13 @@
             <th>Year</th>
             <th>Age</th>
             <th>Starting Balance</th>
+            <th>Starting Debt</th>
             <th>Total Income</th>
             <th>Total Expenses</th>
+            <th>Debt Paid</th>
             <th>Net Change</th>
             <th>Ending Balance</th>
+            <th>Ending Debt</th>
           </tr>
         </thead>
         <tbody>
@@ -23,8 +26,10 @@
             <td>{{ summary.year }}</td>
             <td>{{ summary.age }}</td>
             <td>{{ formatCurrency(summary.startingBalance) }}</td>
+            <td class="debt">{{ formatCurrency(summary.startingTotalDebt) }}</td>
             <td class="income">{{ formatCurrency(summary.totalIncome) }}</td>
             <td class="expenses">{{ formatCurrency(summary.totalExpenses) }}</td>
+            <td class="debt-paid">{{ formatCurrency(summary.totalDebtPrincipalPaid + summary.totalDebtInterestPaid) }}</td>
             <td :class="{
               'net-positive': netChange(summary) > 0,
               'net-negative': netChange(summary) < 0,
@@ -34,6 +39,7 @@
             <td :class="{ 'balance-negative': summary.endingBalance < 0 }">
               {{ formatCurrency(summary.endingBalance) }}
             </td>
+            <td class="debt">{{ formatCurrency(summary.endingTotalDebt) }}</td>
           </tr>
         </tbody>
       </table>
@@ -58,7 +64,8 @@
   }
 
   function netChange(summary: AnnualSummary): number {
-    return summary.totalIncome - summary.totalExpenses
+    const debtPayments = summary.totalDebtPrincipalPaid + summary.totalDebtInterestPaid
+    return summary.totalIncome - summary.totalExpenses - debtPayments
   }
 </script>
 

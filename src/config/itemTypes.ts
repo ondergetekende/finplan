@@ -1,8 +1,16 @@
-import { FinancialItem, LiquidAsset, FixedAsset, CashFlow } from '@/models'
+import {
+  FinancialItem,
+  LiquidAsset,
+  FixedAsset,
+  CashFlow,
+  LinearDebt,
+  AnnualizedDebt,
+  InterestOnlyDebt,
+} from '@/models'
 
 export interface ItemTypeDefinition {
   id: string
-  category: 'asset' | 'cashflow'
+  category: 'asset' | 'cashflow' | 'debt'
   icon?: string
   color: string
   template: FinancialItem
@@ -67,7 +75,35 @@ export const ITEM_TYPES: ItemTypeDefinition[] = [
       2500, // Typical monthly living expenses
       'expense'
     )
-  }
+  },
+  {
+    id: 'mortgage',
+    category: 'debt',
+    color: '#f97316', // orange
+    template: new AnnualizedDebt({
+      id: 'template-mortgage',
+      name: 'Mortgage',
+      amount: 300000, // Typical mortgage amount
+      annualInterestRate: 3.5, // Current mortgage rates
+      monthlyPayment: 1500, // Standard monthly payment
+      startDate: new Date().toISOString().split('T')[0], // Today
+      endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 30)).toISOString().split('T')[0], // 30 years from now
+    })
+  },
+  {
+    id: 'loan',
+    category: 'debt',
+    color: '#f97316', // orange
+    template: new AnnualizedDebt({
+      id: 'template-loan',
+      name: 'Debt',
+      amount: 30000, // Average car loan
+      annualInterestRate: 4.5,
+      monthlyPayment: 600,
+      startDate: new Date().toISOString().split('T')[0], // Today
+      endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 30)).toISOString().split('T')[0], // 30 years from now
+    })
+  },
 ]
 
 export function getItemTypeById(id: string): ItemTypeDefinition | undefined {
@@ -80,4 +116,8 @@ export function getAssetTypes(): ItemTypeDefinition[] {
 
 export function getCashFlowTypes(): ItemTypeDefinition[] {
   return ITEM_TYPES.filter(type => type.category === 'cashflow')
+}
+
+export function getDebtTypes(): ItemTypeDefinition[] {
+  return ITEM_TYPES.filter(type => type.category === 'debt')
 }

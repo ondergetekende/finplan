@@ -1,40 +1,53 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import type { CapitalAccount, CashFlow } from '@/models'
-import { isAsset, isCashFlow, isLiquidAsset, isFixedAsset } from '@/models'
+import type { CapitalAccount, CashFlow, AllDebtTypes } from '@/models'
+import { isAsset, isCashFlow, isLiquidAsset, isFixedAsset, Debt } from '@/models'
 import { getItemTypeById, getItemTypeButtonLabel } from '@/config/itemTypes'
 
 const props = defineProps<{
-  item: CapitalAccount | CashFlow
+  item: CapitalAccount | CashFlow | AllDebtTypes
 }>()
 
 const router = useRouter()
 
 // Determine item type and metadata
 const itemType = computed(() => {
-  if (isAsset(props.item)) {
-    return isLiquidAsset(props.item) ? getItemTypeById('liquid') : getItemTypeById('fixed')
-  } else if (isCashFlow(props.item)) {
-    return getItemTypeById(props.item.type)
+  const item = props.item as any
+  if (isAsset(item)) {
+    return isLiquidAsset(item) ? getItemTypeById('liquid') : getItemTypeById('fixed')
+  } else if (isCashFlow(item)) {
+    return getItemTypeById(item.type)
+  } else if (item instanceof Debt) {
+    // Return a generic debt type definition
+    return {
+      id: 'debt',
+      category: 'debt' as const,
+      color: '#f97316',
+      template: item
+    }
   }
   return undefined
 })
 
 const formattedAmount = computed(() => {
+  const item = props.item as any
   const formatter = new Intl.NumberFormat('en-EU', {
     style: 'currency',
     currency: 'EUR',
     maximumFractionDigits: 0,
   })
 
-  if (isAsset(props.item)) {
+  if (isAsset(item)) {
     // For assets, show total amount
-    return formatter.format(props.item.amount)
-  } else if (isCashFlow(props.item)) {
+    return formatter.format(item.amount)
+  } else if (isCashFlow(item)) {
     // For cashflows, show annual amount
-    const annualAmount = props.item.monthlyAmount * 12
+    const annualAmount = item.monthlyAmount * 12
     return `${formatter.format(annualAmount)}/y`
+  } else if (item instanceof Debt) {
+    // For debts, show principal balance
+    return formatter.format(item.amount)
   }
   return ''
 })
@@ -55,10 +68,13 @@ const badgeStyles = computed(() => {
 })
 
 function handleEdit() {
-  if (isAsset(props.item)) {
-    router.push({ name: 'edit-asset', params: { id: props.item.id } })
-  } else if (isCashFlow(props.item)) {
-    router.push({ name: 'edit-cashflow', params: { id: props.item.id } })
+  const item = props.item as any
+  if (isAsset(item)) {
+    router.push({ name: 'edit-asset', params: { id: item.id } })
+  } else if (isCashFlow(item)) {
+    router.push({ name: 'edit-cashflow', params: { id: item.id } })
+  } else if (item instanceof Debt) {
+    router.push({ name: 'edit-debt', params: { id: item.id } })
   }
 }
 </script>
@@ -67,7 +83,7 @@ function handleEdit() {
   <div class="list-item" :style="itemStyles">
     <div class="item-header">
       <span class="item-name">{{ item.name }}</span>
-      <span class="item-badge" :style="badgeStyles">{{ itemType ? getItemTypeButtonLabel(itemType) : '' }}</span>
+      <span class="item-badge" :style="badgeStyles">{{ itemType?.template?.name || (item instanceof Debt ? 'Debt' : '') }}</span>
     </div>
     <div class="item-footer">
       <span class="item-amount">{{ formattedAmount }}</span>

@@ -11,6 +11,7 @@ import {
   CashFlow,
   type CapitalAccount,
   type ProjectionResult,
+  type AllDebtTypes,
 } from '@/models'
 import { storageService } from '@/services/storage'
 import { calculateProjections } from '@/services/calculator'
@@ -20,6 +21,7 @@ export const usePlannerStore = defineStore('planner', () => {
   const birthDate = ref<string>('')
   const capitalAccounts = ref<CapitalAccount[]>([])
   const cashFlows = ref<CashFlow[]>([])
+  const debts = ref<AllDebtTypes[]>([])
   const liquidAssetsInterestRate = ref<number>(5) // Default 5% for all liquid assets
   const projectionResult = ref<ProjectionResult | null>(null)
 
@@ -31,7 +33,8 @@ export const usePlannerStore = defineStore('planner', () => {
       date,
       capitalAccounts.value as CapitalAccount[],
       cashFlows.value as CashFlow[],
-      liquidAssetsInterestRate.value
+      liquidAssetsInterestRate.value,
+      debts.value as AllDebtTypes[]
     )
   })
 
@@ -46,12 +49,17 @@ export const usePlannerStore = defineStore('planner', () => {
 
   const hasData = computed(
     () =>
-      birthDate.value !== '' && (capitalAccounts.value.length > 0 || cashFlows.value.length > 0),
+      birthDate.value !== '' &&
+      (capitalAccounts.value.length > 0 || cashFlows.value.length > 0 || debts.value.length > 0),
   )
 
   // New computed properties for unified list
   const allItems = computed(() => {
-    return [...capitalAccounts.value, ...cashFlows.value] as (CapitalAccount | CashFlow)[]
+    return [...capitalAccounts.value, ...cashFlows.value, ...debts.value] as (
+      | CapitalAccount
+      | CashFlow
+      | AllDebtTypes
+    )[]
   })
 
   const totalAssets = computed(() =>
@@ -69,6 +77,8 @@ export const usePlannerStore = defineStore('planner', () => {
       .filter((cf) => cf.type === 'expense')
       .reduce((sum, cf) => sum + cf.monthlyAmount * 12, 0),
   )
+
+  const totalDebt = computed(() => debts.value.reduce((sum: number, debt: AllDebtTypes) => sum + debt.amount, 0))
 
   // Actions
   function setBirthDate(date: string) {
@@ -153,6 +163,27 @@ export const usePlannerStore = defineStore('planner', () => {
     recalculate()
   }
 
+  function addDebt(debt: AllDebtTypes) {
+    debts.value.push(debt)
+    recalculate()
+  }
+
+  function updateDebt(id: string, updates: Partial<AllDebtTypes>) {
+    const index = debts.value.findIndex((d: AllDebtTypes) => d.id === id)
+    if (index !== -1) {
+      const existing = debts.value[index]
+      if (existing) {
+        debts.value[index] = existing.with(updates as any)
+      }
+      recalculate()
+    }
+  }
+
+  function removeDebt(id: string) {
+    debts.value = debts.value.filter((d: AllDebtTypes) => d.id !== id)
+    recalculate()
+  }
+
   function recalculate() {
     if (birthDate.value) {
       projectionResult.value = calculateProjections(userProfile.value)
@@ -170,6 +201,7 @@ export const usePlannerStore = defineStore('planner', () => {
       birthDate.value = profile.birthDate
       capitalAccounts.value = profile.capitalAccounts
       cashFlows.value = profile.cashFlows
+      debts.value = profile.debts as AllDebtTypes[]
       liquidAssetsInterestRate.value = profile.liquidAssetsInterestRate
       recalculate()
       return true
@@ -181,6 +213,7 @@ export const usePlannerStore = defineStore('planner', () => {
     birthDate.value = ''
     capitalAccounts.value = []
     cashFlows.value = []
+    debts.value = []
     liquidAssetsInterestRate.value = 5
     projectionResult.value = null
     storageService.clearProfile()
@@ -195,11 +228,16 @@ export const usePlannerStore = defineStore('planner', () => {
     return cashFlows.value.find((cf) => cf.id === id) as CashFlow | undefined
   }
 
+  function getDebtById(id: string): AllDebtTypes | undefined {
+    return debts.value.find((d: AllDebtTypes) => d.id === id)
+  }
+
   return {
     // State
     birthDate,
     capitalAccounts,
     cashFlows,
+    debts,
     liquidAssetsInterestRate,
     projectionResult,
     // Computed
@@ -211,6 +249,7 @@ export const usePlannerStore = defineStore('planner', () => {
     totalAssets,
     totalIncome,
     totalExpenses,
+    totalDebt,
     // Actions
     setBirthDate,
     setLiquidAssetsInterestRate,
@@ -220,6 +259,9 @@ export const usePlannerStore = defineStore('planner', () => {
     addCashFlow,
     updateCashFlow,
     removeCashFlow,
+    addDebt,
+    updateDebt,
+    removeDebt,
     recalculate,
     saveToStorage,
     loadFromStorage,
@@ -227,5 +269,6 @@ export const usePlannerStore = defineStore('planner', () => {
     // Helpers
     getCapitalAccountById,
     getCashFlowById,
+    getDebtById,
   }
 })
