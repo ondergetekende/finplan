@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare Pages
+name: Deploy to Cloudflare Workers
 
 on:
   push:
@@ -12,7 +12,7 @@ jobs:
     permissions:
       contents: read
       deployments: write
-    name: Deploy to Cloudflare Pages
+    name: Deploy to Cloudflare Workers
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,28 +29,17 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Determine environment
-        id: env
-        run: |
-          if [ "${{ github.ref }}" = "refs/heads/production" ]; then
-            echo "project_name=moneymap" >> $GITHUB_OUTPUT
-            echo "environment=production" >> $GITHUB_OUTPUT
-          else
-            echo "project_name=moneymap-beta" >> $GITHUB_OUTPUT
-            echo "environment=beta" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Deploy to Cloudflare Pages
+      - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=${{ steps.env.outputs.project_name }}
+          command: deploy
 
       - name: Create deployment summary
         run: |
           echo "### Deployment Successful! 🚀" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment:** ${{ steps.env.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Project:** ${{ steps.env.outputs.project_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Worker:** moneymap" >> $GITHUB_STEP_SUMMARY
           echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** https://moneymap.ondergetekende.workers.dev" >> $GITHUB_STEP_SUMMARY
