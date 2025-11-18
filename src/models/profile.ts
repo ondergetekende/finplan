@@ -19,6 +19,7 @@ export class UserProfile {
   readonly debts: Debt[]
   readonly liquidAssetsInterestRate: number // Shared annual interest rate for all liquid assets (percentage)
   readonly inflationRate: number // Annual inflation rate (percentage)
+  readonly taxCountry?: string // ISO country code for tax calculations (e.g., 'NL', 'US', 'GB')
 
   constructor(
     birthDate: Month,
@@ -26,7 +27,8 @@ export class UserProfile {
     cashFlows: CashFlow[],
     liquidAssetsInterestRate: number,
     debts: Debt[] = [],
-    inflationRate: number = 2.5
+    inflationRate: number = 2.5,
+    taxCountry?: string
   ) {
     if (birthDate === undefined || typeof birthDate !== 'number') {
       throw new Error('UserProfile birthDate must be a valid Month value')
@@ -38,6 +40,7 @@ export class UserProfile {
     this.debts = debts
     this.liquidAssetsInterestRate = liquidAssetsInterestRate
     this.inflationRate = inflationRate
+    this.taxCountry = taxCountry
   }
 
   /**
@@ -97,6 +100,7 @@ export class UserProfile {
     debts?: Debt[]
     liquidAssetsInterestRate?: number
     inflationRate?: number
+    taxCountry?: string
   }): UserProfile {
     return new UserProfile(
       updates.birthDate ?? this.birthDate,
@@ -104,7 +108,8 @@ export class UserProfile {
       updates.cashFlows ?? this.cashFlows,
       updates.liquidAssetsInterestRate ?? this.liquidAssetsInterestRate,
       updates.debts ?? this.debts,
-      updates.inflationRate ?? this.inflationRate
+      updates.inflationRate ?? this.inflationRate,
+      updates.taxCountry ?? this.taxCountry
     )
   }
 
@@ -119,6 +124,7 @@ export class UserProfile {
       debts: this.debts.map((debt) => debt.toJSON()),
       liquidAssetsInterestRate: this.liquidAssetsInterestRate,
       inflationRate: this.inflationRate,
+      taxCountry: this.taxCountry,
     }
   }
 
@@ -161,7 +167,8 @@ export class UserProfile {
       cashFlows,
       data.liquidAssetsInterestRate || 0,
       debts,
-      data.inflationRate ?? 2.5 // Default to 2.5% for backward compatibility
+      data.inflationRate ?? 2.5, // Default to 2.5% for backward compatibility
+      data.taxCountry // Optional, undefined if not present for backward compatibility
     )
   }
 }
@@ -180,6 +187,10 @@ export interface MonthlyProjection {
   expenses: number
   debtInterestPaid: number
   debtPrincipalPaid: number
+  incomeTaxPaid: number
+  wealthTaxPaid: number
+  capitalGainsTaxPaid: number
+  totalTaxPaid: number
 }
 
 /**
@@ -196,6 +207,10 @@ export interface AnnualSummary {
   totalExpenses: number
   totalDebtInterestPaid: number
   totalDebtPrincipalPaid: number
+  totalIncomeTaxPaid: number
+  totalWealthTaxPaid: number
+  totalCapitalGainsTaxPaid: number
+  totalTaxPaid: number
   endingBalance: number
   endingLiquidAssets: number
   endingFixedAssets: number

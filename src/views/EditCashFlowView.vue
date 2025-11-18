@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePlannerStore } from '@/stores/planner'
 import { getItemTypeById, getItemTypeButtonLabel } from '@/config/itemTypes'
 import type { CashFlowType } from '@/models'
 import type { Month } from '@/types/month'
 import MonthEdit from '@/components/MonthEdit.vue'
+import { getTaxOptions, getTaxConfig } from '@/config/taxConfig'
 
 const props = defineProps<{
   id?: string
@@ -23,6 +24,7 @@ const endDate = ref<Month | undefined>(undefined)
 const cashFlowType = ref<CashFlowType>('income')
 const followsInflation = ref<boolean>(false)
 const isOneTime = ref<boolean>(false)
+const incomeTaxId = ref<string | undefined>(undefined)
 
 // UI state
 const isEditMode = computed(() => !!props.id)
@@ -40,6 +42,25 @@ const amountLabel = computed(() => isOneTime.value ? 'Amount (€) *' : 'Monthly
 const startDateLabel = computed(() => isOneTime.value ? 'Date *' : 'Start Month (optional)')
 const startDateHelpText = computed(() => isOneTime.value ? 'When this transaction occurs' : 'Leave empty to start from current month')
 
+// Tax-related computed properties
+const taxCountry = computed(() => store.taxCountry)
+const countryName = computed(() => {
+  if (!taxCountry.value) return ''
+  const config = getTaxConfig(taxCountry.value)
+  return config?.countryName || ''
+})
+const incomeTaxOptions = computed(() => {
+  if (!taxCountry.value) return []
+  return getTaxOptions(taxCountry.value, 'income')
+})
+
+// Set default tax when country is selected and no tax is set
+function setDefaultTaxIfNeeded() {
+  if (taxCountry.value && cashFlowType.value === 'income' && !incomeTaxId.value) {
+    incomeTaxId.value = 'default'
+  }
+}
+
 // Load existing cashflow for editing
 onMounted(() => {
   if (isEditMode.value && props.id) {
@@ -52,6 +73,7 @@ onMounted(() => {
       cashFlowType.value = cashFlow.type
       followsInflation.value = cashFlow.followsInflation
       isOneTime.value = cashFlow.isOneTime
+      incomeTaxId.value = cashFlow.incomeTaxId
     } else {
       // CashFlow not found, redirect to dashboard
       router.push({ name: 'dashboard' })
@@ -68,10 +90,19 @@ onMounted(() => {
       endDate.value = template.endDate
       followsInflation.value = template.followsInflation ?? false
       isOneTime.value = template.isOneTime ?? false
+      incomeTaxId.value = template.incomeTaxId
     } else {
       cashFlowType.value = props.typeId as CashFlowType
     }
   }
+
+  // Set default tax for new items
+  setDefaultTaxIfNeeded()
+})
+
+// Watch for changes that should trigger default tax setting
+watch([cashFlowType, taxCountry], () => {
+  setDefaultTaxIfNeeded()
 })
 
 function handleSave() {
@@ -96,6 +127,7 @@ function handleSave() {
       type: cashFlowType.value,
       followsInflation: followsInflation.value,
       isOneTime: isOneTime.value,
+      incomeTaxId: incomeTaxId.value,
     }
     store.updateCashFlow(props.id, cashFlowData)
   } else {
@@ -111,6 +143,7 @@ function handleSave() {
         endDate: endDate.value,
         followsInflation: followsInflation.value,
         isOneTime: isOneTime.value,
+        incomeTaxId: incomeTaxId.value,
       })
     }
   }
@@ -147,6 +180,23 @@ function handleDelete() {
           <option value="expense">Expense</option>
         </select>
         <p v-if="isEditMode" class="help-text">Cash flow type cannot be changed</p>
+      </div>
+
+      <div v-if="cashFlowType === 'income' && taxCountry" class="form-group">
+        <label for="income-tax">Income Tax</label>
+        <select id="income-tax" v-model="incomeTaxId">
+          <option value="default">Default for {{ countryName }}</option>
+          <option value="after-tax">After Tax (Net Income)</option>
+          <option disabled>─────────</option>
+          <option
+            v-for="tax in incomeTaxOptions"
+            :key="tax.id"
+            :value="tax.id"
+          >
+            {{ tax.name }}
+          </option>
+        </select>
+        <p class="help-text">Select "After Tax" if amount is already net of taxes</p>
       </div>
 
       <div class="form-group">

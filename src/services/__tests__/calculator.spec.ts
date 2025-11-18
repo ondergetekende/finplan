@@ -1579,4 +1579,335 @@ describe('Financial Calculator', () => {
       expect(year2026?.endingFixedAssets).toBe(0)
     })
   })
+
+  describe('Taxation', () => {
+    it('should calculate income tax on cash flows', () => {
+      // Create income with tax
+      const income = new CashFlow(
+        '1',
+        'Salary',
+        5000, // $5,000/month = $60,000/year
+        'income',
+        undefined,
+        undefined,
+        false,
+        false,
+        'us-federal-single' // US federal income tax
+      )
+
+      const liquidAsset = new LiquidAsset('1', 'Checking', 10000)
+
+      const birthMonth = stringToMonth('1990-01-01')!
+      const profile = new UserProfile(
+        birthMonth,
+        [liquidAsset],
+        [income],
+        0, // No interest on liquid assets
+        [],
+        0, // No inflation
+        'US' // United States
+      )
+
+      const result = calculateProjections(profile)
+
+      // Check first month
+      const firstMonth = result.monthlyProjections[0]
+      expect(firstMonth).toBeDefined()
+
+      // Income tax should be calculated
+      expect(firstMonth!.incomeTaxPaid).toBeGreaterThan(0)
+
+      // Total tax paid should equal income tax (no other taxes)
+      expect(firstMonth!.totalTaxPaid).toBe(firstMonth!.incomeTaxPaid)
+
+      // Liquid assets should increase by income minus tax
+      const netIncome = firstMonth!.income - firstMonth!.incomeTaxPaid
+      expect(firstMonth!.liquidAssets).toBeCloseTo(10000 + netIncome, 1)
+    })
+
+    it('should not tax "after-tax" income', () => {
+      const incomeAfterTax = new CashFlow(
+        '1',
+        'Net Salary',
+        4000, // Already after tax
+        'income',
+        undefined,
+        undefined,
+        false,
+        false,
+        'after-tax'
+      )
+
+      const liquidAsset = new LiquidAsset('1', 'Checking', 10000)
+
+      const birthMonth = stringToMonth('1990-01-01')!
+      const profile = new UserProfile(
+        birthMonth,
+        [liquidAsset],
+        [incomeAfterTax],
+        0,
+        [],
+        0,
+        'US'
+      )
+
+      const result = calculateProjections(profile)
+      const firstMonth = result.monthlyProjections[0]
+
+      // No income tax should be calculated
+      expect(firstMonth!.incomeTaxPaid).toBe(0)
+      expect(firstMonth!.totalTaxPaid).toBe(0)
+
+      // Full income should be added
+      expect(firstMonth!.liquidAssets).toBe(10000 + 4000)
+    })
+
+    it('should calculate capital gains tax on liquid asset interest', () => {
+      const liquidAsset = new LiquidAsset(
+        '1',
+        'Investment Account',
+        1000000, // $1M to generate enough interest to be taxable
+        undefined, // No wealth tax
+        'us-ltcg-single' // US long-term capital gains tax
+      )
+
+      const birthMonth = stringToMonth('1990-01-01')!
+      const profile = new UserProfile(
+        birthMonth,
+        [liquidAsset],
+        [],
+        10, // 10% interest rate -> $100k annual interest
+        [],
+        0,
+        'US'
+      )
+
+      const result = calculateProjections(profile)
+      const firstMonth = result.monthlyProjections[0]
+
+      // Capital gains tax should be calculated
+      // Annual interest: $1M * 10% = $100k
+      // US LTCG: 0-44625 at 0%, 44625-492300 at 15%
+      // Tax on $100k = (44625 * 0%) + (55375 * 15%) = $8,306.25
+      // Monthly tax = $692.19
+      expect(firstMonth!.capitalGainsTaxPaid).toBeGreaterThan(0)
+
+      // Interest earned
+      const monthlyRate = 10 / 100 / 12
+      const interest = 1000000 * monthlyRate
+
+      // Tax should reduce liquid assets
+      expect(firstMonth!.liquidAssets).toBeLessThan(1000000 + interest)
+    })
+
+    it('should calculate wealth tax on assets', () => {
+      const liquidAsset = new LiquidAsset(
+        '1',
+        'Savings',
+        100000,
+        'nl-box3-wealth', // Dutch Box 3 wealth tax
+        undefined
+      )
+
+      const birthMonth = stringToMonth('1990-01-01')!
+      const profile = new UserProfile(
+        birthMonth,
+        [liquidAsset],
+        [],
+        0, // No interest
+        [],
+        0,
+        'NL' // Netherlands
+      )
+
+      const result = calculateProjections(profile)
+      const firstMonth = result.monthlyProjections[0]
+
+      // Wealth tax should be calculated
+      expect(firstMonth!.wealthTaxPaid).toBeGreaterThan(0)
+
+      // Total tax should include wealth tax
+      expect(firstMonth!.totalTaxPaid).toBe(firstMonth!.wealthTaxPaid)
+    })
+
+    it('should calculate capital gains tax on fixed asset appreciation', () => {
+      const fixedAsset = new FixedAsset(
+        '1',
+        'House',
+        500000,
+        3, // 3% appreciation
+        undefined, // No liquidation date
+        undefined, // No wealth tax
+        'gb-cgt-higher' // UK capital gains tax
+      )
+
+      const liquidAsset = new LiquidAsset('2', 'Checking', 50000)
+
+      const birthMonth = stringToMonth('1990-01-01')!
+      const profile = new UserProfile(
+        birthMonth,
+        [liquidAsset, fixedAsset],
+        [],
+        0,
+        [],
+        0,
+        'GB' // United Kingdom
+      )
+
+      const result = calculateProjections(profile)
+      const firstMonth = result.monthlyProjections[0]
+
+      // Capital gains tax should be calculated on appreciation
+      expect(firstMonth!.capitalGainsTaxPaid).toBeGreaterThan(0)
+
+      // Tax should be deducted from liquid assets
+      expect(firstMonth!.liquidAssets).toBeLessThan(50000)
+    })
+
+    it('should handle multiple tax types simultaneously', () => {
+      // Income with tax
+      const income = new CashFlow(
+        '1',
+        'Salary',
+        6000,
+        'income',
+        undefined,
+        undefined,
+        false,
+        false,
+        'nl-box1' // Dutch Box 1 income tax
+      )
+
+      // Liquid asset with both taxes
+      const liquidAsset = new LiquidAsset(
+        '1',
+        'Investments',
+        200000,
+        'nl-box3-wealth', // Wealth tax
+        'nl-no-cgt' // No capital gains (NL)
+      )
+
+      // Fixed asset with appreciation
+      const fixedAsset = new FixedAsset(
+        '2',
+        'House',
+        400000,
+        2, // 2% appreciation
+        undefined,
+        'nl-box3-wealth', // Wealth tax on house
+        'nl-no-cgt' // No capital gains
+      )
+
+      const birthMonth = stringToMonth('1990-01-01')!
+      const profile = new UserProfile(
+        birthMonth,
+        [liquidAsset, fixedAsset],
+        [income],
+        4, // 4% interest on liquid assets
+        [],
+        0,
+        'NL'
+      )
+
+      const result = calculateProjections(profile)
+      const firstMonth = result.monthlyProjections[0]
+
+      // All tax types should be present
+      expect(firstMonth!.incomeTaxPaid).toBeGreaterThan(0)
+      expect(firstMonth!.wealthTaxPaid).toBeGreaterThan(0)
+
+      // Capital gains tax should be 0 (NL has no CGT)
+      expect(firstMonth!.capitalGainsTaxPaid).toBe(0)
+
+      // Total tax should be sum of all taxes
+      expect(firstMonth!.totalTaxPaid).toBeCloseTo(
+        firstMonth!.incomeTaxPaid +
+        firstMonth!.wealthTaxPaid +
+        firstMonth!.capitalGainsTaxPaid,
+        2
+      )
+
+      // Annual summary should aggregate taxes correctly
+      const year2025 = result.annualSummaries.find(s => s.year === 2025)
+      expect(year2025).toBeDefined()
+      expect(year2025!.totalIncomeTaxPaid).toBeGreaterThan(0)
+      expect(year2025!.totalWealthTaxPaid).toBeGreaterThan(0)
+      expect(year2025!.totalCapitalGainsTaxPaid).toBe(0)
+      expect(year2025!.totalTaxPaid).toBeCloseTo(
+        year2025!.totalIncomeTaxPaid +
+        year2025!.totalWealthTaxPaid +
+        year2025!.totalCapitalGainsTaxPaid,
+        2
+      )
+    })
+
+    it('should work without tax configuration (backward compatibility)', () => {
+      const liquidAsset = new LiquidAsset('1', 'Savings', 50000)
+      const income = new CashFlow('1', 'Salary', 5000, 'income')
+
+      const birthMonth = stringToMonth('1990-01-01')!
+      const profile = new UserProfile(
+        birthMonth,
+        [liquidAsset],
+        [income],
+        5
+        // No taxCountry
+      )
+
+      const result = calculateProjections(profile)
+      const firstMonth = result.monthlyProjections[0]
+
+      // No taxes should be calculated
+      expect(firstMonth!.incomeTaxPaid).toBe(0)
+      expect(firstMonth!.wealthTaxPaid).toBe(0)
+      expect(firstMonth!.capitalGainsTaxPaid).toBe(0)
+      expect(firstMonth!.totalTaxPaid).toBe(0)
+
+      // Original calculations should still work
+      expect(firstMonth!.income).toBe(5000)
+      expect(firstMonth!.liquidAssets).toBeGreaterThan(50000)
+    })
+
+    it('should use default tax options when specified', () => {
+      const income = new CashFlow(
+        '1',
+        'Salary',
+        5000,
+        'income',
+        undefined,
+        undefined,
+        false,
+        false,
+        'default' // Use default tax for country
+      )
+
+      const liquidAsset = new LiquidAsset(
+        '1',
+        'Checking',
+        100000, // Above NL Box 3 exemption threshold (57,000)
+        'default', // Use default wealth tax
+        'default' // Use default capital gains tax
+      )
+
+      const birthMonth = stringToMonth('1990-01-01')!
+      const profile = new UserProfile(
+        birthMonth,
+        [liquidAsset],
+        [income],
+        5,
+        [],
+        0,
+        'NL' // Netherlands
+      )
+
+      const result = calculateProjections(profile)
+      const firstMonth = result.monthlyProjections[0]
+
+      // Default taxes should be applied
+      // NL defaults: Box 1 income tax, Box 3 wealth tax, no CGT
+      expect(firstMonth!.incomeTaxPaid).toBeGreaterThan(0) // Box 1
+      expect(firstMonth!.wealthTaxPaid).toBeGreaterThan(0) // Box 3 (applied to amount above 57k threshold)
+      expect(firstMonth!.capitalGainsTaxPaid).toBe(0) // No CGT in NL
+    })
+  })
 })

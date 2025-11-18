@@ -11,6 +11,10 @@
             <th>Starting Debt</th>
             <th>Total Income</th>
             <th>Total Expenses</th>
+            <th>Income Tax</th>
+            <th>Wealth Tax</th>
+            <th>Cap. Gains Tax</th>
+            <th>Total Tax</th>
             <th>Debt Paid</th>
             <th>Net Change</th>
             <th>Ending Balance</th>
@@ -29,6 +33,10 @@
             <td class="debt">{{ formatCurrency(adjustForInflation(summary.startingTotalDebt, getYearsFromNow(summary.year))) }}</td>
             <td class="income">{{ formatCurrency(adjustForInflation(summary.totalIncome, getYearsFromNow(summary.year))) }}</td>
             <td class="expenses">{{ formatCurrency(adjustForInflation(summary.totalExpenses, getYearsFromNow(summary.year))) }}</td>
+            <td class="tax">{{ formatCurrency(adjustForInflation(summary.totalIncomeTaxPaid, getYearsFromNow(summary.year))) }}</td>
+            <td class="tax">{{ formatCurrency(adjustForInflation(summary.totalWealthTaxPaid, getYearsFromNow(summary.year))) }}</td>
+            <td class="tax">{{ formatCurrency(adjustForInflation(summary.totalCapitalGainsTaxPaid, getYearsFromNow(summary.year))) }}</td>
+            <td class="total-tax">{{ formatCurrency(adjustForInflation(summary.totalTaxPaid, getYearsFromNow(summary.year))) }}</td>
             <td class="debt-paid">{{ formatCurrency(adjustForInflation(summary.totalDebtPrincipalPaid + summary.totalDebtInterestPaid, getYearsFromNow(summary.year))) }}</td>
             <td :class="{
               'net-positive': netChange(summary, getYearsFromNow(summary.year)) > 0,
@@ -78,7 +86,8 @@
     const debtPayments = adjustForInflation(summary.totalDebtPrincipalPaid + summary.totalDebtInterestPaid, yearsFromNow)
     const income = adjustForInflation(summary.totalIncome, yearsFromNow)
     const expenses = adjustForInflation(summary.totalExpenses, yearsFromNow)
-    return income - expenses - debtPayments
+    const taxes = adjustForInflation(summary.totalTaxPaid, yearsFromNow)
+    return income - expenses - debtPayments - taxes
   }
 
   function getYearsFromNow(year: number): number {
@@ -206,6 +215,26 @@
 
   .expenses {
     color: #ef4444;
+    font-weight: 500;
+  }
+
+  .tax {
+    color: #f97316;
+    font-weight: 500;
+  }
+
+  .total-tax {
+    color: #dc2626;
+    font-weight: 600;
+  }
+
+  .debt {
+    color: #9333ea;
+    font-weight: 500;
+  }
+
+  .debt-paid {
+    color: #9333ea;
     font-weight: 500;
   }
 

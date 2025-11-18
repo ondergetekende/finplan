@@ -19,6 +19,7 @@ export class CashFlow extends FinancialItem {
   readonly type: CashFlowType
   readonly followsInflation: boolean // Whether this cash flow adjusts for inflation
   readonly isOneTime: boolean // Whether this is a one-time transaction (vs recurring monthly)
+  readonly incomeTaxId?: string // Tax treatment for income: tax option ID, 'after-tax', 'default', or undefined
 
   constructor(
     id: string,
@@ -28,7 +29,8 @@ export class CashFlow extends FinancialItem {
     startDate?: Month,
     endDate?: Month,
     followsInflation: boolean = false,
-    isOneTime: boolean = false
+    isOneTime: boolean = false,
+    incomeTaxId?: string
   ) {
     super(id, name)
 
@@ -47,6 +49,7 @@ export class CashFlow extends FinancialItem {
     this.endDate = endDate
     this.followsInflation = followsInflation
     this.isOneTime = isOneTime
+    this.incomeTaxId = incomeTaxId
   }
 
   /**
@@ -60,7 +63,7 @@ export class CashFlow extends FinancialItem {
    * Create a copy of this cash flow with updated properties
    */
   with(
-    updates: Partial<Pick<CashFlow, 'name' | 'monthlyAmount' | 'startDate' | 'endDate' | 'type' | 'followsInflation' | 'isOneTime'>>
+    updates: Partial<Pick<CashFlow, 'name' | 'monthlyAmount' | 'startDate' | 'endDate' | 'type' | 'followsInflation' | 'isOneTime' | 'incomeTaxId'>>
   ): CashFlow {
     return new CashFlow(
       this.id,
@@ -70,7 +73,8 @@ export class CashFlow extends FinancialItem {
       updates.startDate !== undefined ? updates.startDate : this.startDate,
       updates.endDate !== undefined ? updates.endDate : this.endDate,
       updates.followsInflation ?? this.followsInflation,
-      updates.isOneTime ?? this.isOneTime
+      updates.isOneTime ?? this.isOneTime,
+      updates.incomeTaxId !== undefined ? updates.incomeTaxId : this.incomeTaxId
     )
   }
 
@@ -87,6 +91,7 @@ export class CashFlow extends FinancialItem {
       type: this.type,
       followsInflation: this.followsInflation,
       isOneTime: this.isOneTime,
+      incomeTaxId: this.incomeTaxId,
     }
   }
 
@@ -118,7 +123,8 @@ export class CashFlow extends FinancialItem {
       startDate,
       endDate,
       data.followsInflation ?? false,
-      data.isOneTime ?? false
+      data.isOneTime ?? false,
+      data.incomeTaxId // Optional, undefined if not present for backward compatibility
     )
   }
 

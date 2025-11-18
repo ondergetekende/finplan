@@ -26,6 +26,7 @@ export const usePlannerStore = defineStore('planner', () => {
   const debts = ref<AllDebtTypes[]>([])
   const liquidAssetsInterestRate = ref<number>(5) // Default 5% for all liquid assets
   const inflationRate = ref<number>(2.5) // Default 2.5% inflation
+  const taxCountry = ref<string | undefined>(undefined) // ISO country code for tax calculations
   const projectionResult = ref<ProjectionResult | null>(null)
 
   // Computed
@@ -36,7 +37,8 @@ export const usePlannerStore = defineStore('planner', () => {
       cashFlows.value as CashFlow[],
       liquidAssetsInterestRate.value,
       debts.value as AllDebtTypes[],
-      inflationRate.value
+      inflationRate.value,
+      taxCountry.value
     )
   })
 
@@ -96,10 +98,15 @@ export const usePlannerStore = defineStore('planner', () => {
     recalculate()
   }
 
+  function setTaxCountry(country: string | undefined) {
+    taxCountry.value = country
+    recalculate()
+  }
+
   function addCapitalAccount(
     account:
-      | { type: 'liquid'; name: string; amount: number }
-      | { type: 'fixed'; name: string; amount: number; annualInterestRate: number; liquidationDate?: Month }
+      | { type: 'liquid'; name: string; amount: number; wealthTaxId?: string; capitalGainsTaxId?: string }
+      | { type: 'fixed'; name: string; amount: number; annualInterestRate: number; liquidationDate?: Month; wealthTaxId?: string; capitalGainsTaxId?: string }
   ) {
     const id = crypto.randomUUID()
     let newAccount: CapitalAccount
@@ -110,10 +117,18 @@ export const usePlannerStore = defineStore('planner', () => {
         account.name,
         account.amount,
         account.annualInterestRate,
-        account.liquidationDate
+        account.liquidationDate,
+        account.wealthTaxId,
+        account.capitalGainsTaxId
       )
     } else {
-      newAccount = new LiquidAsset(id, account.name, account.amount)
+      newAccount = new LiquidAsset(
+        id,
+        account.name,
+        account.amount,
+        account.wealthTaxId,
+        account.capitalGainsTaxId
+      )
     }
 
     capitalAccounts.value.push(newAccount)
@@ -211,6 +226,7 @@ export const usePlannerStore = defineStore('planner', () => {
       debts.value = profile.debts as AllDebtTypes[]
       liquidAssetsInterestRate.value = profile.liquidAssetsInterestRate
       inflationRate.value = profile.inflationRate
+      taxCountry.value = profile.taxCountry
       recalculate()
       return true
     }
@@ -224,6 +240,7 @@ export const usePlannerStore = defineStore('planner', () => {
     debts.value = []
     liquidAssetsInterestRate.value = 5
     inflationRate.value = 2.5
+    taxCountry.value = undefined
     projectionResult.value = null
     storageService.clearProfile()
   }
@@ -249,6 +266,7 @@ export const usePlannerStore = defineStore('planner', () => {
     debts,
     liquidAssetsInterestRate,
     inflationRate,
+    taxCountry,
     projectionResult,
     // Computed
     userProfile,
@@ -264,6 +282,7 @@ export const usePlannerStore = defineStore('planner', () => {
     setBirthDate,
     setLiquidAssetsInterestRate,
     setInflationRate,
+    setTaxCountry,
     addCapitalAccount,
     updateCapitalAccount,
     removeCapitalAccount,

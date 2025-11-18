@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePlannerStore } from '@/stores/planner'
 import { getItemTypeById, getItemTypeButtonLabel } from '@/config/itemTypes'
@@ -7,6 +7,7 @@ import { LiquidAsset, FixedAsset } from '@/models'
 import type { AssetType } from '@/models'
 import type { Month } from '@/types/month'
 import MonthEdit from '@/components/MonthEdit.vue'
+import { getTaxOptions, getTaxConfig } from '@/config/taxConfig'
 
 const props = defineProps<{
   id?: string
@@ -22,6 +23,8 @@ const amount = ref<number>(0)
 const annualInterestRate = ref<number>(0)
 const liquidationDate = ref<Month | undefined>(undefined)
 const assetType = ref<AssetType>('liquid')
+const wealthTaxId = ref<string | undefined>(undefined)
+const capitalGainsTaxId = ref<string | undefined>(undefined)
 
 // UI state
 const isEditMode = computed(() => !!props.id)
@@ -36,6 +39,34 @@ const pageTitle = computed(() => {
 
 const showInterestRate = computed(() => assetType.value === 'fixed')
 
+// Tax-related computed properties
+const taxCountry = computed(() => store.taxCountry)
+const countryName = computed(() => {
+  if (!taxCountry.value) return ''
+  const config = getTaxConfig(taxCountry.value)
+  return config?.countryName || ''
+})
+const wealthTaxOptions = computed(() => {
+  if (!taxCountry.value) return []
+  return getTaxOptions(taxCountry.value, 'wealth')
+})
+const capitalGainsTaxOptions = computed(() => {
+  if (!taxCountry.value) return []
+  return getTaxOptions(taxCountry.value, 'capital_gains')
+})
+
+// Set default taxes when country is selected and no taxes are set
+function setDefaultTaxesIfNeeded() {
+  if (taxCountry.value) {
+    if (!wealthTaxId.value) {
+      wealthTaxId.value = 'default'
+    }
+    if (!capitalGainsTaxId.value) {
+      capitalGainsTaxId.value = 'default'
+    }
+  }
+}
+
 // Load existing asset for editing
 onMounted(() => {
   if (isEditMode.value && props.id) {
@@ -44,6 +75,8 @@ onMounted(() => {
       name.value = asset.name
       amount.value = asset.amount
       assetType.value = asset instanceof FixedAsset ? 'fixed' : 'liquid'
+      wealthTaxId.value = asset.wealthTaxId
+      capitalGainsTaxId.value = asset.capitalGainsTaxId
       if (asset instanceof FixedAsset) {
         annualInterestRate.value = asset.annualInterestRate
         liquidationDate.value = asset.liquidationDate
@@ -65,14 +98,26 @@ onMounted(() => {
         amount.value = template.amount
         annualInterestRate.value = template.annualInterestRate
         liquidationDate.value = template.liquidationDate
+        wealthTaxId.value = template.wealthTaxId
+        capitalGainsTaxId.value = template.capitalGainsTaxId
       } else if (template instanceof LiquidAsset) {
         assetType.value = 'liquid'
         amount.value = template.amount
+        wealthTaxId.value = template.wealthTaxId
+        capitalGainsTaxId.value = template.capitalGainsTaxId
       }
     } else {
       assetType.value = props.typeId as AssetType
     }
   }
+
+  // Set default taxes for new items
+  setDefaultTaxesIfNeeded()
+})
+
+// Watch for tax country changes to set defaults
+watch(taxCountry, () => {
+  setDefaultTaxesIfNeeded()
 })
 
 function handleSave() {
@@ -86,6 +131,8 @@ function handleSave() {
     const updates: any = {
       name: name.value.trim(),
       amount: amount.value,
+      wealthTaxId: wealthTaxId.value,
+      capitalGainsTaxId: capitalGainsTaxId.value,
     }
     if (assetType.value === 'fixed') {
       updates.annualInterestRate = annualInterestRate.value
@@ -101,12 +148,16 @@ function handleSave() {
         amount: amount.value,
         annualInterestRate: annualInterestRate.value,
         liquidationDate: liquidationDate.value,
+        wealthTaxId: wealthTaxId.value,
+        capitalGainsTaxId: capitalGainsTaxId.value,
       })
     } else {
       store.addCapitalAccount({
         type: 'liquid',
         name: name.value.trim(),
         amount: amount.value,
+        wealthTaxId: wealthTaxId.value,
+        capitalGainsTaxId: capitalGainsTaxId.value,
       })
     }
   }
@@ -191,6 +242,40 @@ function handleDelete() {
           Optional: Month when this asset will be sold/liquidated. The asset value will be
           transferred to liquid assets.
         </p>
+      </div>
+
+      <div v-if="taxCountry" class="form-group">
+        <label for="wealth-tax">Wealth Tax</label>
+        <select id="wealth-tax" v-model="wealthTaxId">
+          <option value="default">Default for {{ countryName }}</option>
+          <option value="none">None</option>
+          <option disabled>─────────</option>
+          <option
+            v-for="tax in wealthTaxOptions"
+            :key="tax.id"
+            :value="tax.id"
+          >
+            {{ tax.name }}
+          </option>
+        </select>
+        <p class="help-text">Wealth tax applies to asset value</p>
+      </div>
+
+      <div v-if="taxCountry" class="form-group">
+        <label for="capital-gains-tax">Capital Gains Tax</label>
+        <select id="capital-gains-tax" v-model="capitalGainsTaxId">
+          <option value="default">Default for {{ countryName }}</option>
+          <option value="none">None</option>
+          <option disabled>─────────</option>
+          <option
+            v-for="tax in capitalGainsTaxOptions"
+            :key="tax.id"
+            :value="tax.id"
+          >
+            {{ tax.name }}
+          </option>
+        </select>
+        <p class="help-text">Capital gains tax applies to interest/appreciation</p>
       </div>
 
       <div class="form-actions">

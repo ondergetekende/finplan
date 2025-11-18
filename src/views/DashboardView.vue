@@ -25,6 +25,11 @@
     set: (value: number) => store.setLiquidAssetsInterestRate(value),
   })
 
+  const taxCountry = computed({
+    get: () => store.taxCountry,
+    set: (value: string | undefined) => store.setTaxCountry(value),
+  })
+
   // Toggle for showing inflation-adjusted values
   const showInflationAdjusted = ref(false)
 </script>
@@ -39,6 +44,8 @@
         @update:inflation-rate="inflationRate = $event"
         :liquid-assets-interest-rate="liquidAssetsInterestRate"
         @update:liquid-assets-interest-rate="liquidAssetsInterestRate = $event"
+        :tax-country="taxCountry"
+        @update:tax-country="taxCountry = $event"
         :current-age="store.currentAge"
       />
     </section>

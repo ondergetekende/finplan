@@ -11,6 +11,12 @@ import type {
 import { LiquidAsset, FixedAsset } from '@/models'
 import type { Month } from '@/types/month'
 import { getCurrentMonth, addMonths, formatMonth, monthDiff } from '@/types/month'
+import {
+  resolveTaxOption,
+  calculateTax,
+  calculateMonthlyIncomeTax,
+  calculateMonthlyTax
+} from './taxCalculator'
 
 const MAX_AGE = 100
 
@@ -116,16 +122,66 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
 
     const age = profile.getAgeAt(currentMonth)
 
+    // Initialize tax tracking for this month
+    let monthlyIncomeTax = 0
+    let monthlyWealthTax = 0
+    let monthlyCapitalGainsTax = 0
+
     // Apply interest to liquid assets pool (shared rate)
     const liquidMonthlyRate = liquidInterestRate / 100 / 12
     const liquidInterest = liquidAssetsBalance * liquidMonthlyRate
     liquidAssetsBalance += liquidInterest
+
+    // Apply capital gains tax on liquid asset interest
+    for (const account of liquidAccounts) {
+      const taxOption = resolveTaxOption(
+        account.capitalGainsTaxId,
+        profile.taxCountry,
+        'capital_gains'
+      )
+
+      if (taxOption && liquidInterest > 0) {
+        // Calculate the portion of interest attributable to this account
+        // (proportional to its share of total liquid assets)
+        const accountShare = account.amount / (liquidAccounts.reduce((sum, a) => sum + a.amount, 0) || 1)
+        const accountInterest = liquidInterest * accountShare
+
+        // Calculate tax on this account's portion of interest (annualized)
+        const annualInterest = accountInterest * 12
+        const annualTax = calculateTax(annualInterest, taxOption)
+        const monthlyTax = annualTax / 12
+
+        monthlyCapitalGainsTax += monthlyTax
+      }
+    }
+
+    // Deduct capital gains tax from liquid assets
+    liquidAssetsBalance -= monthlyCapitalGainsTax
 
     // Apply appreciation/depreciation to each fixed asset individually
     for (const asset of fixedAssetBalances) {
       const monthlyRate = asset.annualInterestRate / 100 / 12
       const valueChange = asset.balance * monthlyRate
       asset.balance += valueChange
+
+      // Apply capital gains tax on fixed asset appreciation
+      const originalAsset = fixedAccounts.find(a => a.id === asset.id)
+      if (originalAsset && valueChange > 0) {
+        const taxOption = resolveTaxOption(
+          originalAsset.capitalGainsTaxId,
+          profile.taxCountry,
+          'capital_gains'
+        )
+
+        if (taxOption) {
+          // Calculate tax on appreciation (annualized)
+          const annualAppreciation = valueChange * 12
+          const annualTax = calculateTax(annualAppreciation, taxOption)
+          const monthlyTax = annualTax / 12
+
+          monthlyCapitalGainsTax += monthlyTax
+        }
+      }
 
       // Check for liquidation at start of month (after appreciation for this month)
       if (asset.liquidationDate !== undefined && currentMonth >= asset.liquidationDate && asset.balance > 0) {
@@ -135,6 +191,55 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
         asset.balance = 0
       }
     }
+
+    // Deduct capital gains tax on fixed assets from liquid assets
+    liquidAssetsBalance -= monthlyCapitalGainsTax
+
+    // Apply wealth tax on all assets
+    // Wealth tax on liquid assets
+    for (const account of liquidAccounts) {
+      const taxOption = resolveTaxOption(
+        account.wealthTaxId,
+        profile.taxCountry,
+        'wealth'
+      )
+
+      if (taxOption) {
+        // Calculate the portion of liquid assets attributable to this account
+        const totalLiquidAssets = liquidAccounts.reduce((sum, a) => sum + a.amount, 0)
+        const accountShare = totalLiquidAssets > 0 ? account.amount / totalLiquidAssets : 0
+        const accountValue = liquidAssetsBalance * accountShare
+
+        // Calculate wealth tax (monthly)
+        const annualTax = calculateTax(accountValue, taxOption)
+        const monthlyTax = annualTax / 12
+
+        monthlyWealthTax += monthlyTax
+      }
+    }
+
+    // Wealth tax on fixed assets
+    for (const asset of fixedAssetBalances) {
+      const originalAsset = fixedAccounts.find(a => a.id === asset.id)
+      if (originalAsset) {
+        const taxOption = resolveTaxOption(
+          originalAsset.wealthTaxId,
+          profile.taxCountry,
+          'wealth'
+        )
+
+        if (taxOption && asset.balance > 0) {
+          // Calculate wealth tax (monthly)
+          const annualTax = calculateTax(asset.balance, taxOption)
+          const monthlyTax = annualTax / 12
+
+          monthlyWealthTax += monthlyTax
+        }
+      }
+    }
+
+    // Deduct wealth tax from liquid assets
+    liquidAssetsBalance -= monthlyWealthTax
 
     // Process debt payments (after interest on liquid assets)
     let monthlyDebtInterest = 0
@@ -236,11 +341,29 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
 
         if (cashFlow.type === 'income') {
           monthlyIncome += amount
+
+          // Calculate income tax (skip if 'after-tax')
+          if (cashFlow.incomeTaxId !== 'after-tax') {
+            const taxOption = resolveTaxOption(
+              cashFlow.incomeTaxId,
+              profile.taxCountry,
+              'income'
+            )
+
+            if (taxOption) {
+              // Calculate monthly income tax (using annualized income for brackets)
+              const tax = calculateMonthlyIncomeTax(amount, taxOption)
+              monthlyIncomeTax += tax
+            }
+          }
         } else {
           monthlyExpenses += amount
         }
       }
     }
+
+    // Deduct income tax from liquid assets
+    liquidAssetsBalance -= monthlyIncomeTax
 
     // All cash flows interact with liquid assets only
     const netCashFlow = monthlyIncome - monthlyExpenses
@@ -262,6 +385,10 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
       expenses: monthlyExpenses,
       debtInterestPaid: monthlyDebtInterest,
       debtPrincipalPaid: monthlyDebtPrincipal,
+      incomeTaxPaid: monthlyIncomeTax,
+      wealthTaxPaid: monthlyWealthTax,
+      capitalGainsTaxPaid: monthlyCapitalGainsTax,
+      totalTaxPaid: monthlyIncomeTax + monthlyWealthTax + monthlyCapitalGainsTax,
     })
   }
 
@@ -311,6 +438,10 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
     const totalExpenses = projections.reduce((sum, p) => sum + p.expenses, 0)
     const totalDebtInterestPaid = projections.reduce((sum, p) => sum + p.debtInterestPaid, 0)
     const totalDebtPrincipalPaid = projections.reduce((sum, p) => sum + p.debtPrincipalPaid, 0)
+    const totalIncomeTaxPaid = projections.reduce((sum, p) => sum + p.incomeTaxPaid, 0)
+    const totalWealthTaxPaid = projections.reduce((sum, p) => sum + p.wealthTaxPaid, 0)
+    const totalCapitalGainsTaxPaid = projections.reduce((sum, p) => sum + p.capitalGainsTaxPaid, 0)
+    const totalTaxPaid = projections.reduce((sum, p) => sum + p.totalTaxPaid, 0)
     const endingBalance = lastProjection.balance
     const endingLiquidAssets = lastProjection.liquidAssets
     const endingFixedAssets = lastProjection.fixedAssets
@@ -327,6 +458,10 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
       totalExpenses,
       totalDebtInterestPaid,
       totalDebtPrincipalPaid,
+      totalIncomeTaxPaid,
+      totalWealthTaxPaid,
+      totalCapitalGainsTaxPaid,
+      totalTaxPaid,
       endingBalance,
       endingLiquidAssets,
       endingFixedAssets,

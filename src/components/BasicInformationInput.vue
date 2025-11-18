@@ -44,6 +44,25 @@
       />
       <span class="hint">Default: 5%</span>
     </div>
+    <div class="form-field tax-country-field">
+      <label for="tax-country">Tax Country</label>
+      <select
+        id="tax-country"
+        :value="taxCountry || ''"
+        @change="handleTaxCountryUpdate"
+        class="select-input"
+      >
+        <option value="">No country selected (no taxes)</option>
+        <option
+          v-for="config in availableCountries"
+          :key="config.countryCode"
+          :value="config.countryCode"
+        >
+          {{ config.countryName }}
+        </option>
+      </select>
+      <span class="hint">Select your tax country to enable tax calculations</span>
+    </div>
   </div>
 </template>
 
@@ -52,22 +71,29 @@ import { computed } from 'vue'
 import MonthEdit from './MonthEdit.vue'
 import type { Month } from '@/types/month'
 import { getCurrentMonth } from '@/types/month'
+import { TAX_CONFIGS } from '@/config/taxConfig'
 
 const props = defineProps<{
   birthDate: Month
   inflationRate: number
   liquidAssetsInterestRate: number
   currentAge: number | null
+  taxCountry?: string
 }>()
 
 const emit = defineEmits<{
   'update:birthDate': [value: Month]
   'update:inflationRate': [value: number]
   'update:liquidAssetsInterestRate': [value: number]
+  'update:taxCountry': [value: string | undefined]
 }>()
 
 const maxMonth = computed(() => {
   return getCurrentMonth()
+})
+
+const availableCountries = computed(() => {
+  return Object.values(TAX_CONFIGS).sort((a, b) => a.countryName.localeCompare(b.countryName))
 })
 
 function handleBirthDateUpdate(value: Month | undefined) {
@@ -90,6 +116,12 @@ function handleLiquidAssetsInterestRateUpdate(event: Event) {
   if (!isNaN(value)) {
     emit('update:liquidAssetsInterestRate', value)
   }
+}
+
+function handleTaxCountryUpdate(event: Event) {
+  const target = event.target as HTMLSelectElement
+  const value = target.value === '' ? undefined : target.value
+  emit('update:taxCountry', value)
 }
 </script>
 
@@ -127,7 +159,8 @@ h3 {
   font-size: 0.95rem;
 }
 
-.number-input {
+.number-input,
+.select-input {
   padding: 0.75rem;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -136,7 +169,14 @@ h3 {
   transition: border-color 0.2s;
 }
 
-.number-input:focus {
+.select-input {
+  background-color: white;
+  cursor: pointer;
+  width: 250px;
+}
+
+.number-input:focus,
+.select-input:focus {
   outline: none;
   border-color: #42b983;
 }
@@ -145,6 +185,10 @@ h3 {
   font-size: 0.85rem;
   color: #666;
   margin-top: 0.25rem;
+}
+
+.tax-country-field {
+  margin-top: 1rem;
 }
 
 .age-display {
