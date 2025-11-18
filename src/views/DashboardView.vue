@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, ref } from 'vue'
   import { usePlannerStore } from '@/stores/planner'
   import BasicInformationInput from '@/components/BasicInformationInput.vue'
   import FinancialListItem from '@/components/FinancialListItem.vue'
@@ -24,6 +24,9 @@
     get: () => store.liquidAssetsInterestRate,
     set: (value: number) => store.setLiquidAssetsInterestRate(value),
   })
+
+  // Toggle for showing inflation-adjusted values
+  const showInflationAdjusted = ref(false)
 </script>
 
 <template>
@@ -76,7 +79,20 @@
       v-if="store.hasData"
       class="projections-section"
     >
-      <h2>Financial Projections</h2>
+      <div class="projections-header">
+        <h2>Financial Projections</h2>
+        <div class="inflation-toggle">
+          <label class="toggle-label">
+            <input
+              v-model="showInflationAdjusted"
+              type="checkbox"
+              class="toggle-checkbox"
+            />
+            <span>Show in today's purchasing power</span>
+          </label>
+          <p class="toggle-hint">When enabled, future values are adjusted to show their equivalent value in today's money</p>
+        </div>
+      </div>
 
       <div
         v-if="store.projectionResult"
@@ -86,11 +102,17 @@
           <NetWorthChart
             :annual-summaries="store.projectionResult.annualSummaries"
             :calculation-time="store.projectionResult.calculationTimeMs"
+            :show-inflation-adjusted="showInflationAdjusted"
+            :inflation-rate="store.inflationRate"
           />
         </div>
 
         <div class="table-container">
-          <AnnualBreakdownTable :annual-summaries="store.projectionResult.annualSummaries" />
+          <AnnualBreakdownTable
+            :annual-summaries="store.projectionResult.annualSummaries"
+            :show-inflation-adjusted="showInflationAdjusted"
+            :inflation-rate="store.inflationRate"
+          />
         </div>
       </div>
 
@@ -176,11 +198,49 @@
     margin-top: 3rem;
   }
 
+  .projections-header {
+    margin-bottom: 1.5rem;
+  }
+
   .projections-section h2 {
     font-size: 1.5rem;
     font-weight: 600;
     color: #1f2937;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .inflation-toggle {
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+  }
+
+  .toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    font-weight: 500;
+    color: #111827;
+    font-size: 0.9375rem;
+  }
+
+  .toggle-checkbox {
+    width: 1.125rem;
+    height: 1.125rem;
+    cursor: pointer;
+    margin: 0;
+  }
+
+  .toggle-label span {
+    user-select: none;
+  }
+
+  .toggle-hint {
+    margin: 0.5rem 0 0 2rem;
+    font-size: 0.8125rem;
+    color: #6b7280;
   }
 
   .projections-content {

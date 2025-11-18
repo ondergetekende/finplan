@@ -30,15 +30,31 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, T
 const props = defineProps<{
   annualSummaries: AnnualSummary[]
   calculationTime?: number | null
+  showInflationAdjusted?: boolean
+  inflationRate?: number
 }>()
 
+// Helper function to adjust values for inflation
+function adjustForInflation(value: number, yearsFromNow: number): number {
+  if (!props.showInflationAdjusted || !props.inflationRate || props.inflationRate === 0) {
+    return value
+  }
+  // Convert nominal future value to today's purchasing power
+  return value / Math.pow(1 + props.inflationRate / 100, yearsFromNow)
+}
+
 const chartData = computed(() => {
+  const currentYear = props.annualSummaries[0]?.year ?? new Date().getFullYear()
   const labels = props.annualSummaries.map((summary) => `${summary.year} (age ${summary.age})`)
-  const liquidData = props.annualSummaries.map((summary) => summary.endingLiquidAssets)
+  const liquidData = props.annualSummaries.map((summary) => {
+    const yearsFromNow = summary.year - currentYear
+    return adjustForInflation(summary.endingLiquidAssets, yearsFromNow)
+  })
   // Net fixed assets = fixed assets - debt
-  const netFixedData = props.annualSummaries.map(
-    (summary) => summary.endingFixedAssets - summary.endingTotalDebt
-  )
+  const netFixedData = props.annualSummaries.map((summary) => {
+    const yearsFromNow = summary.year - currentYear
+    return adjustForInflation(summary.endingFixedAssets - summary.endingTotalDebt, yearsFromNow)
+  })
 
   return {
     labels,

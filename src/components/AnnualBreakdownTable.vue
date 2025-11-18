@@ -21,25 +21,25 @@
           <tr
             v-for="summary in annualSummaries"
             :key="summary.year"
-            :class="{ negative: summary.endingBalance < 0 }"
+            :class="{ negative: adjustForInflation(summary.endingBalance, getYearsFromNow(summary.year)) < 0 }"
           >
             <td>{{ summary.year }}</td>
             <td>{{ summary.age }}</td>
-            <td>{{ formatCurrency(summary.startingBalance) }}</td>
-            <td class="debt">{{ formatCurrency(summary.startingTotalDebt) }}</td>
-            <td class="income">{{ formatCurrency(summary.totalIncome) }}</td>
-            <td class="expenses">{{ formatCurrency(summary.totalExpenses) }}</td>
-            <td class="debt-paid">{{ formatCurrency(summary.totalDebtPrincipalPaid + summary.totalDebtInterestPaid) }}</td>
+            <td>{{ formatCurrency(adjustForInflation(summary.startingBalance, getYearsFromNow(summary.year))) }}</td>
+            <td class="debt">{{ formatCurrency(adjustForInflation(summary.startingTotalDebt, getYearsFromNow(summary.year))) }}</td>
+            <td class="income">{{ formatCurrency(adjustForInflation(summary.totalIncome, getYearsFromNow(summary.year))) }}</td>
+            <td class="expenses">{{ formatCurrency(adjustForInflation(summary.totalExpenses, getYearsFromNow(summary.year))) }}</td>
+            <td class="debt-paid">{{ formatCurrency(adjustForInflation(summary.totalDebtPrincipalPaid + summary.totalDebtInterestPaid, getYearsFromNow(summary.year))) }}</td>
             <td :class="{
-              'net-positive': netChange(summary) > 0,
-              'net-negative': netChange(summary) < 0,
+              'net-positive': netChange(summary, getYearsFromNow(summary.year)) > 0,
+              'net-negative': netChange(summary, getYearsFromNow(summary.year)) < 0,
             }">
-              {{ formatCurrency(netChange(summary)) }}
+              {{ formatCurrency(netChange(summary, getYearsFromNow(summary.year))) }}
             </td>
-            <td :class="{ 'balance-negative': summary.endingBalance < 0 }">
-              {{ formatCurrency(summary.endingBalance) }}
+            <td :class="{ 'balance-negative': adjustForInflation(summary.endingBalance, getYearsFromNow(summary.year)) < 0 }">
+              {{ formatCurrency(adjustForInflation(summary.endingBalance, getYearsFromNow(summary.year))) }}
             </td>
-            <td class="debt">{{ formatCurrency(summary.endingTotalDebt) }}</td>
+            <td class="debt">{{ formatCurrency(adjustForInflation(summary.endingTotalDebt, getYearsFromNow(summary.year))) }}</td>
           </tr>
         </tbody>
       </table>
@@ -50,9 +50,20 @@
 <script setup lang="ts">
   import type { AnnualSummary } from '@/models'
 
-  defineProps<{
+  const props = defineProps<{
     annualSummaries: AnnualSummary[]
+    showInflationAdjusted?: boolean
+    inflationRate?: number
   }>()
+
+  // Helper function to adjust values for inflation
+  function adjustForInflation(value: number, yearsFromNow: number): number {
+    if (!props.showInflationAdjusted || !props.inflationRate || props.inflationRate === 0) {
+      return value
+    }
+    // Convert nominal future value to today's purchasing power
+    return value / Math.pow(1 + props.inflationRate / 100, yearsFromNow)
+  }
 
   function formatCurrency(value: number): string {
     return new Intl.NumberFormat('en-EU', {
@@ -63,9 +74,16 @@
     }).format(value)
   }
 
-  function netChange(summary: AnnualSummary): number {
-    const debtPayments = summary.totalDebtPrincipalPaid + summary.totalDebtInterestPaid
-    return summary.totalIncome - summary.totalExpenses - debtPayments
+  function netChange(summary: AnnualSummary, yearsFromNow: number): number {
+    const debtPayments = adjustForInflation(summary.totalDebtPrincipalPaid + summary.totalDebtInterestPaid, yearsFromNow)
+    const income = adjustForInflation(summary.totalIncome, yearsFromNow)
+    const expenses = adjustForInflation(summary.totalExpenses, yearsFromNow)
+    return income - expenses - debtPayments
+  }
+
+  function getYearsFromNow(year: number): number {
+    const currentYear = props.annualSummaries[0]?.year ?? new Date().getFullYear()
+    return year - currentYear
   }
 </script>
 
