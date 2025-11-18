@@ -1,0 +1,23 @@
+# Cloudflare Pages configuration
+# This file defines settings for Cloudflare Pages deployments
+
+name = "financial-planner"
+compatibility_date = "2025-01-17"
+
+[build]
+command = "npm run build"
+cwd = ""
+watch_dir = "src"
+
+[build.upload]
+format = "service-worker"
+
+# Pages configuration
+pages_build_output_dir = "dist"
+
+# Node.js compatibility
+compatibility_flags = ["nodejs_compat"]
+
+# Environment variables can be set here or in Cloudflare dashboard
+# [env.production]
+# [env.beta]

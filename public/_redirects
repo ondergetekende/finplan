@@ -1,0 +1,3 @@
+# SPA Routing - Redirect all routes to index.html
+# This allows Vue Router to handle client-side routing
+/* /index.html 200
