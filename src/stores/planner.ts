@@ -16,11 +16,12 @@ import {
 import { storageService } from '@/services/storage'
 import { calculateProjections } from '@/services/calculator'
 import type { Month } from '@/types/month'
-import { getCurrentMonth } from '@/types/month'
+import { getCurrentMonth, addMonths } from '@/types/month'
 
 export const usePlannerStore = defineStore('planner', () => {
   // State
-  const birthDate = ref<Month>(getCurrentMonth())
+  // Default to 30 years ago (30 * 12 months = 360 months)
+  const birthDate = ref<Month>(addMonths(getCurrentMonth(), -360))
   const capitalAccounts = ref<CapitalAccount[]>([])
   const cashFlows = ref<CashFlow[]>([])
   const debts = ref<AllDebtTypes[]>([])
@@ -28,6 +29,10 @@ export const usePlannerStore = defineStore('planner', () => {
   const inflationRate = ref<number>(2.5) // Default 2.5% inflation
   const taxCountry = ref<string | undefined>(undefined) // ISO country code for tax calculations
   const projectionResult = ref<ProjectionResult | null>(null)
+
+  // Wizard state
+  const wizardCompleted = ref<boolean>(false) // Track if user has completed wizard at least once
+  const showWizard = ref<boolean>(false) // Control wizard modal visibility
 
   // Computed
   const userProfile = computed<UserProfile>(() => {
@@ -100,6 +105,33 @@ export const usePlannerStore = defineStore('planner', () => {
 
   function setTaxCountry(country: string | undefined) {
     taxCountry.value = country
+    recalculate()
+  }
+
+  function openWizard() {
+    showWizard.value = true
+  }
+
+  function closeWizard() {
+    showWizard.value = false
+  }
+
+  function completeWizard() {
+    wizardCompleted.value = true
+    showWizard.value = false
+  }
+
+  function saveBasicInfo(data: {
+    birthDate: Month
+    taxCountry?: string
+    liquidAssetsInterestRate: number
+    inflationRate: number
+  }) {
+    birthDate.value = data.birthDate
+    taxCountry.value = data.taxCountry
+    liquidAssetsInterestRate.value = data.liquidAssetsInterestRate
+    inflationRate.value = data.inflationRate
+    completeWizard()
     recalculate()
   }
 
@@ -214,6 +246,12 @@ export const usePlannerStore = defineStore('planner', () => {
 
   function saveToStorage() {
     storageService.saveProfile(userProfile.value)
+    // Save wizard completion state separately
+    try {
+      localStorage.setItem('moneymap-wizard-completed', JSON.stringify(wizardCompleted.value))
+    } catch (error) {
+      console.error('Failed to save wizard state:', error)
+    }
   }
 
   function loadFromStorage() {
@@ -228,13 +266,24 @@ export const usePlannerStore = defineStore('planner', () => {
       inflationRate.value = profile.inflationRate
       taxCountry.value = profile.taxCountry
       recalculate()
+
+      // Load wizard completion state
+      try {
+        const wizardState = localStorage.getItem('moneymap-wizard-completed')
+        if (wizardState !== null) {
+          wizardCompleted.value = JSON.parse(wizardState)
+        }
+      } catch (error) {
+        console.error('Failed to load wizard state:', error)
+      }
+
       return true
     }
     return false
   }
 
   function clearAll() {
-    birthDate.value = getCurrentMonth()
+    birthDate.value = addMonths(getCurrentMonth(), -360) // 30 years ago
     capitalAccounts.value = []
     cashFlows.value = []
     debts.value = []
@@ -242,7 +291,14 @@ export const usePlannerStore = defineStore('planner', () => {
     inflationRate.value = 2.5
     taxCountry.value = undefined
     projectionResult.value = null
+    wizardCompleted.value = false
+    showWizard.value = false
     storageService.clearProfile()
+    try {
+      localStorage.removeItem('moneymap-wizard-completed')
+    } catch (error) {
+      console.error('Failed to clear wizard state:', error)
+    }
   }
 
   // Helper getters
@@ -268,6 +324,8 @@ export const usePlannerStore = defineStore('planner', () => {
     inflationRate,
     taxCountry,
     projectionResult,
+    wizardCompleted,
+    showWizard,
     // Computed
     userProfile,
     currentAge,
@@ -283,6 +341,10 @@ export const usePlannerStore = defineStore('planner', () => {
     setLiquidAssetsInterestRate,
     setInflationRate,
     setTaxCountry,
+    openWizard,
+    closeWizard,
+    completeWizard,
+    saveBasicInfo,
     addCapitalAccount,
     updateCapitalAccount,
     removeCapitalAccount,

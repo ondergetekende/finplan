@@ -193,3 +193,13 @@ export function parseMonth(str: string | undefined): Month | undefined {
 export function isValidMonth(value: unknown): value is Month {
   return typeof value === 'number' && Number.isInteger(value) && value >= 0;
 }
+
+/**
+ * Calculate age in years from a birth month to current month.
+ * @param birthMonth The birth month
+ * @returns Age in years
+ */
+export function getAgeInYears(birthMonth: Month): number {
+  const monthsSinceBirth = monthDiff(getCurrentMonth(), birthMonth)
+  return Math.floor(monthsSinceBirth / 12)
+}

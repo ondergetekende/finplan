@@ -1,7 +1,8 @@
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { ref, onMounted } from 'vue'
   import { usePlannerStore } from '@/stores/planner'
-  import BasicInformationInput from '@/components/BasicInformationInput.vue'
+  import BasicInfoSummary from '@/components/BasicInfoSummary.vue'
+  import BasicInfoWizard from '@/components/BasicInfoWizard.vue'
   import FinancialListItem from '@/components/FinancialListItem.vue'
   import ActionButtons from '@/components/ActionButtons.vue'
   import NetWorthChart from '@/components/NetWorthChart.vue'
@@ -10,43 +11,54 @@
 
   const store = usePlannerStore()
 
-  const birthDate = computed({
-    get: () => store.birthDate,
-    set: (value: Month) => store.setBirthDate(value),
-  })
-
-  const inflationRate = computed({
-    get: () => store.inflationRate,
-    set: (value: number) => store.setInflationRate(value),
-  })
-
-  const liquidAssetsInterestRate = computed({
-    get: () => store.liquidAssetsInterestRate,
-    set: (value: number) => store.setLiquidAssetsInterestRate(value),
-  })
-
-  const taxCountry = computed({
-    get: () => store.taxCountry,
-    set: (value: string | undefined) => store.setTaxCountry(value),
-  })
-
   // Toggle for showing inflation-adjusted values
   const showInflationAdjusted = ref(false)
+
+  // Auto-open wizard on first visit
+  onMounted(() => {
+    // If user hasn't completed the wizard yet, open it automatically
+    if (!store.wizardCompleted) {
+      store.openWizard()
+    }
+  })
+
+  function handleEditBasicInfo() {
+    store.openWizard()
+  }
+
+  function handleWizardSave(data: {
+    birthDate: Month
+    taxCountry?: string
+    liquidAssetsInterestRate: number
+    inflationRate: number
+  }) {
+    store.saveBasicInfo(data)
+  }
+
+  function handleWizardClose() {
+    store.closeWizard()
+  }
 </script>
 
 <template>
   <div class="dashboard">
     <section class="birth-date-section">
-      <BasicInformationInput
-        :birth-date="birthDate"
-        @update:birth-date="birthDate = $event"
-        :inflation-rate="inflationRate"
-        @update:inflation-rate="inflationRate = $event"
-        :liquid-assets-interest-rate="liquidAssetsInterestRate"
-        @update:liquid-assets-interest-rate="liquidAssetsInterestRate = $event"
-        :tax-country="taxCountry"
-        @update:tax-country="taxCountry = $event"
+      <BasicInfoSummary
         :current-age="store.currentAge"
+        :tax-country="store.taxCountry"
+        :liquid-assets-interest-rate="store.liquidAssetsInterestRate"
+        :inflation-rate="store.inflationRate"
+        @edit="handleEditBasicInfo"
+      />
+
+      <BasicInfoWizard
+        :is-open="store.showWizard"
+        :birth-date="store.birthDate"
+        :tax-country="store.taxCountry"
+        :liquid-assets-interest-rate="store.liquidAssetsInterestRate"
+        :inflation-rate="store.inflationRate"
+        @close="handleWizardClose"
+        @save="handleWizardSave"
       />
     </section>
 
