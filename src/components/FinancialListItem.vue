@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { usePlannerStore } from '@/stores/planner'
 import type { CapitalAccount, CashFlow, AllDebtTypes } from '@/models'
 import { isAsset, isCashFlow, isLiquidAsset, isFixedAsset, Debt } from '@/models'
 import { getItemTypeById, getItemTypeButtonLabel } from '@/config/itemTypes'
@@ -8,6 +9,11 @@ import { getItemTypeById, getItemTypeButtonLabel } from '@/config/itemTypes'
 const props = defineProps<{
   item: CapitalAccount | CashFlow | AllDebtTypes
 }>()
+
+const store = usePlannerStore()
+const isEditingAmount = ref(false)
+const editAmount = ref('')
+const inputRef = ref<HTMLInputElement | null>(null)
 
 const router = useRouter()
 
@@ -32,6 +38,19 @@ const itemType = computed(() => {
     }
   }
   return undefined
+})
+
+// Get the numeric value to edit based on item type
+const editableValue = computed(() => {
+  const item = props.item as any
+  if (isAsset(item)) {
+    return item.amount
+  } else if (isCashFlow(item)) {
+    return item.monthlyAmount
+  } else if (item instanceof Debt) {
+    return item.amount
+  }
+  return 0
 })
 
 const formattedAmount = computed(() => {
@@ -87,6 +106,52 @@ function handleEdit() {
     router.push({ name: 'edit-debt', params: { id: item.id } })
   }
 }
+
+function startEditing() {
+  editAmount.value = editableValue.value.toString()
+  isEditingAmount.value = true
+  // Focus the input on next tick
+  setTimeout(() => {
+    inputRef.value?.select()
+  }, 0)
+}
+
+function cancelEditing() {
+  isEditingAmount.value = false
+  editAmount.value = ''
+}
+
+function saveAmount() {
+  const newValue = parseFloat(editAmount.value.replace(/[^0-9.-]/g, ''))
+
+  // Validate the input
+  if (isNaN(newValue) || newValue <= 0) {
+    // Invalid input, cancel editing
+    cancelEditing()
+    return
+  }
+
+  // Update based on item type
+  const item = props.item as any
+  if (isAsset(item)) {
+    store.updateCapitalAccount(item.id, { amount: newValue })
+  } else if (isCashFlow(item)) {
+    store.updateCashFlow(item.id, { monthlyAmount: newValue })
+  } else if (item instanceof Debt) {
+    store.updateDebt(item.id, { amount: newValue })
+  }
+
+  isEditingAmount.value = false
+  editAmount.value = ''
+}
+
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Enter') {
+    saveAmount()
+  } else if (event.key === 'Escape') {
+    cancelEditing()
+  }
+}
 </script>
 
 <template>
@@ -96,7 +161,23 @@ function handleEdit() {
       <span class="item-badge" :style="badgeStyles">{{ itemType?.template?.name || (item instanceof Debt ? 'Debt' : '') }}</span>
     </div>
     <div class="item-footer">
-      <span class="item-amount">{{ formattedAmount }}</span>
+      <input
+        v-if="isEditingAmount"
+        ref="inputRef"
+        v-model="editAmount"
+        type="text"
+        class="item-amount-input"
+        @blur="saveAmount"
+        @keydown="handleKeydown"
+      />
+      <span
+        v-else
+        class="item-amount"
+        @click="startEditing"
+        title="Click to edit"
+      >
+        {{ formattedAmount }}
+      </span>
       <button class="edit-button" @click="handleEdit">Edit</button>
     </div>
   </div>
@@ -160,6 +241,27 @@ function handleEdit() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.item-amount:hover {
+  background-color: #f3f4f6;
+}
+
+.item-amount-input {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  border: 2px solid #3b82f6;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  background: white;
+  outline: none;
+  min-width: 120px;
+  flex: 1;
 }
 
 .edit-button {
@@ -195,7 +297,8 @@ function handleEdit() {
     font-size: 0.9375rem;
   }
 
-  .item-amount {
+  .item-amount,
+  .item-amount-input {
     font-size: 1rem;
   }
 
@@ -218,7 +321,8 @@ function handleEdit() {
     font-size: 0.875rem;
   }
 
-  .item-amount {
+  .item-amount,
+  .item-amount-input {
     font-size: 0.9375rem;
   }
 }
