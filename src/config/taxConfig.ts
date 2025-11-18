@@ -16,6 +16,16 @@ export interface TaxBracket {
 }
 
 /**
+ * Parameters for adjusting tax brackets for inflation
+ */
+export interface InflationAdjustment {
+  /** Annual inflation rate as a percentage (e.g., 2.5 for 2.5%) */
+  inflationRate: number
+  /** Number of months since the reference year (typically current month - Jan of reference year) */
+  monthsSinceReference: number
+}
+
+/**
  * Tax type enum
  */
 export type TaxType = 'income' | 'wealth' | 'capital_gains'

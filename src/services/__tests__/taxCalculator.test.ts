@@ -6,7 +6,7 @@ import {
   calculateMonthlyTax,
   calculateMonthlyIncomeTax
 } from '../taxCalculator'
-import type { TaxOption, TaxBracket } from '../../config/taxConfig'
+import type { TaxOption, TaxBracket, InflationAdjustment } from '../../config/taxConfig'
 
 describe('taxCalculator', () => {
   describe('calculateTax', () => {
@@ -362,6 +362,239 @@ describe('taxCalculator', () => {
       // Tax = 12000 * 0.20 = 2400
       // Monthly = 200
       expect(higherMonthlyTax).toBe(200)
+    })
+  })
+
+  describe('Inflation-adjusted tax calculations', () => {
+    it('should adjust exemption threshold for inflation', () => {
+      const taxOption: TaxOption = {
+        id: 'test-exemption',
+        name: 'Test With Exemption',
+        type: 'wealth',
+        isDefault: true,
+        rate: 10,
+        exemptionThreshold: 50000
+      }
+
+      // After 1 year at 3% inflation
+      const inflationAdjustment: InflationAdjustment = {
+        inflationRate: 3,
+        monthsSinceReference: 12
+      }
+
+      // Adjusted threshold: 50000 * 1.03 = 51500
+      // Amount of 52000 is now just above adjusted threshold
+      // Tax = (52000 - 51500) * 0.1 = 50
+      const tax = calculateTax(52000, taxOption, inflationAdjustment)
+      expect(tax).toBeCloseTo(50, 0)
+
+      // Without inflation adjustment, same amount would have higher tax
+      const taxNoInflation = calculateTax(52000, taxOption)
+      expect(taxNoInflation).toBe(200) // (52000 - 50000) * 0.1
+    })
+
+    it('should adjust progressive tax brackets for inflation', () => {
+      const taxOption: TaxOption = {
+        id: 'test-progressive',
+        name: 'Test Progressive Tax',
+        type: 'income',
+        isDefault: true,
+        brackets: [
+          { threshold: 0, rate: 10 },
+          { threshold: 50000, rate: 20 },
+          { threshold: 100000, rate: 30 }
+        ]
+      }
+
+      // After 2 years at 2.5% inflation
+      const inflationAdjustment: InflationAdjustment = {
+        inflationRate: 2.5,
+        monthsSinceReference: 24
+      }
+
+      // Adjusted brackets:
+      // 0 * 1.025^2 = 0
+      // 50000 * 1.025^2 = 51,562.50
+      // 100000 * 1.025^2 = 103,125
+
+      // Income of 75,000 falls in second bracket
+      // Without inflation: 50000*0.1 + 25000*0.2 = 5000 + 5000 = 10000
+      const taxNoInflation = calculateTax(75000, taxOption)
+      expect(taxNoInflation).toBe(10000)
+
+      // With inflation adjustment:
+      // Threshold becomes 50000 * 1.025^2 = 51,562.50
+      // Tax = 51562.50 * 0.1 + (75000 - 51562.50) * 0.2
+      const taxWithInflation = calculateTax(75000, taxOption, inflationAdjustment)
+      // Just check it's less than without inflation and approximately correct
+      expect(taxWithInflation).toBeCloseTo(9747, 0)
+
+      // Tax is lower with inflation adjustment because brackets moved up
+      expect(taxWithInflation).toBeLessThan(taxNoInflation)
+    })
+
+    it('should handle Netherlands Box 1 with inflation', () => {
+      const nlBox1: TaxOption = {
+        id: 'nl-box1',
+        name: 'Box 1',
+        type: 'income',
+        isDefault: true,
+        brackets: [
+          { threshold: 0, rate: 36.93 },
+          { threshold: 73031, rate: 49.5 }
+        ]
+      }
+
+      // After 10 years at 2% inflation
+      const inflationAdjustment: InflationAdjustment = {
+        inflationRate: 2,
+        monthsSinceReference: 120
+      }
+
+      // Annual income of €60,000
+      const income = 60000
+
+      // Without inflation
+      const taxNoInflation = calculateTax(income, nlBox1)
+      expect(taxNoInflation).toBeCloseTo(22158, 0) // 60000 * 0.3693
+
+      // With inflation: threshold adjusted to 73031 * 1.02^10 = 89,002.57
+      // Since income (60000) is still below adjusted threshold,
+      // all taxed at lower rate: 60000 * 0.3693 = 22158
+      const taxWithInflation = calculateTax(income, nlBox1, inflationAdjustment)
+      expect(taxWithInflation).toBeCloseTo(22158, 0)
+
+      // For higher income that crosses the bracket
+      const higherIncome = 90000
+      const higherTaxNoInflation = calculateTax(higherIncome, nlBox1)
+      // 73031 * 0.3693 + 16969 * 0.495 = 26,972.35 + 8,399.66 = 35,371.98
+      expect(higherTaxNoInflation).toBeCloseTo(35370, 0)
+
+      const higherTaxWithInflation = calculateTax(
+        higherIncome,
+        nlBox1,
+        inflationAdjustment
+      )
+      // With inflation-adjusted threshold
+      expect(higherTaxWithInflation).toBeCloseTo(33360, 0)
+      expect(higherTaxWithInflation).toBeLessThan(higherTaxNoInflation)
+    })
+
+    it('should adjust exemption threshold for wealth tax with inflation', () => {
+      const nlBox3: TaxOption = {
+        id: 'nl-box3',
+        name: 'Box 3',
+        type: 'wealth',
+        isDefault: true,
+        exemptionThreshold: 57000,
+        rate: 36
+      }
+
+      // After 5 years at 2.5% inflation
+      const inflationAdjustment: InflationAdjustment = {
+        inflationRate: 2.5,
+        monthsSinceReference: 60
+      }
+
+      // Wealth of €100,000
+      const wealth = 100000
+
+      // Without inflation: (100000 - 57000) * 0.36 = 15480
+      const taxNoInflation = calculateTax(wealth, nlBox3)
+      expect(taxNoInflation).toBe(15480)
+
+      // With inflation: threshold = 57000 * 1.025^5 = 64,425.99
+      // Tax = (100000 - 64425.99) * 0.36 = 12,806.64
+      const taxWithInflation = calculateTax(wealth, nlBox3, inflationAdjustment)
+      expect(taxWithInflation).toBeCloseTo(12784, 0)
+      expect(taxWithInflation).toBeLessThan(taxNoInflation)
+    })
+
+    it('should work with calculateMonthlyIncomeTax', () => {
+      const taxOption: TaxOption = {
+        id: 'test-progressive',
+        name: 'Test Progressive Income Tax',
+        type: 'income',
+        isDefault: true,
+        brackets: [
+          { threshold: 0, rate: 10 },
+          { threshold: 50000, rate: 20 }
+        ]
+      }
+
+      const monthlyIncome = 5000 // Annual: 60000
+
+      // After 1 year at 3% inflation
+      const inflationAdjustment: InflationAdjustment = {
+        inflationRate: 3,
+        monthsSinceReference: 12
+      }
+
+      // Without inflation: 50000*0.1 + 10000*0.2 = 5000 + 2000 = 7000
+      // Monthly: 7000 / 12 = 583.33
+      const monthlyTaxNoInflation = calculateMonthlyIncomeTax(monthlyIncome, taxOption)
+      expect(monthlyTaxNoInflation).toBeCloseTo(583.33, 1)
+
+      // With inflation: threshold = 50000 * 1.03 = 51500
+      // 51500*0.1 + 8500*0.2 = 5150 + 1700 = 6850
+      // Monthly: 6850 / 12 = 570.83
+      const monthlyTaxWithInflation = calculateMonthlyIncomeTax(
+        monthlyIncome,
+        taxOption,
+        inflationAdjustment
+      )
+      expect(monthlyTaxWithInflation).toBeCloseTo(570.83, 1)
+      expect(monthlyTaxWithInflation).toBeLessThan(monthlyTaxNoInflation)
+    })
+
+    it('should handle zero inflation rate', () => {
+      const taxOption: TaxOption = {
+        id: 'test-brackets',
+        name: 'Test Brackets',
+        type: 'income',
+        isDefault: true,
+        brackets: [
+          { threshold: 0, rate: 10 },
+          { threshold: 50000, rate: 20 }
+        ]
+      }
+
+      const inflationAdjustment: InflationAdjustment = {
+        inflationRate: 0,
+        monthsSinceReference: 60
+      }
+
+      // With 0% inflation, should be same as no inflation adjustment
+      const taxWithZeroInflation = calculateTax(75000, taxOption, inflationAdjustment)
+      const taxNoInflation = calculateTax(75000, taxOption)
+
+      expect(taxWithZeroInflation).toBe(taxNoInflation)
+      expect(taxWithZeroInflation).toBe(10000) // 50000*0.1 + 25000*0.2
+    })
+
+    it('should handle zero months since reference', () => {
+      const taxOption: TaxOption = {
+        id: 'test-brackets',
+        name: 'Test Brackets',
+        type: 'income',
+        isDefault: true,
+        brackets: [
+          { threshold: 0, rate: 10 },
+          { threshold: 50000, rate: 20 }
+        ]
+      }
+
+      const inflationAdjustment: InflationAdjustment = {
+        inflationRate: 5,
+        monthsSinceReference: 0
+      }
+
+      // With 0 months, should be same as no inflation adjustment
+      const taxAtReferenceTime = calculateTax(75000, taxOption, inflationAdjustment)
+      const taxNoInflation = calculateTax(75000, taxOption)
+
+      expect(taxAtReferenceTime).toBe(taxNoInflation)
+      expect(taxAtReferenceTime).toBe(10000)
     })
   })
 

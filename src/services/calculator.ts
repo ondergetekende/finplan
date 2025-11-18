@@ -15,7 +15,8 @@ import {
   resolveTaxOption,
   calculateTax,
   calculateMonthlyIncomeTax,
-  calculateMonthlyTax
+  calculateMonthlyTax,
+  type InflationAdjustment
 } from './taxCalculator'
 
 const MAX_AGE = 100
@@ -122,6 +123,13 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
 
     const age = profile.getAgeAt(currentMonth)
 
+    // Create inflation adjustment for this month
+    // Tax brackets are adjusted based on months since projection start
+    const inflationAdjustment: InflationAdjustment = {
+      inflationRate: inflationRate ?? 0,
+      monthsSinceReference: monthIndex
+    }
+
     // Initialize tax tracking for this month
     let monthlyIncomeTax = 0
     let monthlyWealthTax = 0
@@ -148,7 +156,7 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
 
         // Calculate tax on this account's portion of interest (annualized)
         const annualInterest = accountInterest * 12
-        const annualTax = calculateTax(annualInterest, taxOption)
+        const annualTax = calculateTax(annualInterest, taxOption, inflationAdjustment)
         const monthlyTax = annualTax / 12
 
         monthlyCapitalGainsTax += monthlyTax
@@ -176,7 +184,7 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
         if (taxOption) {
           // Calculate tax on appreciation (annualized)
           const annualAppreciation = valueChange * 12
-          const annualTax = calculateTax(annualAppreciation, taxOption)
+          const annualTax = calculateTax(annualAppreciation, taxOption, inflationAdjustment)
           const monthlyTax = annualTax / 12
 
           monthlyCapitalGainsTax += monthlyTax
@@ -211,7 +219,7 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
         const accountValue = liquidAssetsBalance * accountShare
 
         // Calculate wealth tax (monthly)
-        const annualTax = calculateTax(accountValue, taxOption)
+        const annualTax = calculateTax(accountValue, taxOption, inflationAdjustment)
         const monthlyTax = annualTax / 12
 
         monthlyWealthTax += monthlyTax
@@ -230,7 +238,7 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
 
         if (taxOption && asset.balance > 0) {
           // Calculate wealth tax (monthly)
-          const annualTax = calculateTax(asset.balance, taxOption)
+          const annualTax = calculateTax(asset.balance, taxOption, inflationAdjustment)
           const monthlyTax = annualTax / 12
 
           monthlyWealthTax += monthlyTax
@@ -352,7 +360,7 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
 
             if (taxOption) {
               // Calculate monthly income tax (using annualized income for brackets)
-              const tax = calculateMonthlyIncomeTax(amount, taxOption)
+              const tax = calculateMonthlyIncomeTax(amount, taxOption, inflationAdjustment)
               monthlyIncomeTax += tax
             }
           }
