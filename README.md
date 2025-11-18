@@ -11,11 +11,12 @@ We're in MVP stage, so the features are basic:
 - Store data in local storage for persistence
 - Visualize financial projections with charts and graphs
 - Interest calculations
+- Debt calculations
 
 ## Future plans
 
 - Income tax calculations with brackets
-- Debt management and amortization schedules
+- Amortization schedules
 - Adjusting expenses and income for inflation
 - Multi-entity support (e.g. business and personal finances) with taxed transfers
 - Templates for common financial scenarios
@@ -23,6 +24,5 @@ We're in MVP stage, so the features are basic:
 
 ## Non-goals
 
-- Investment advice. This is purely a planning tool, we assume you know the consequences of your investment choices.
-- Real-time market data integration. All calculations are based on user input and static assumptions.
+- Detailed portfolio management. This tool is focused on cash flow and basic financial planning, not on managing investments.
 - Monetization. This project is open-source and free to use. The furthest we may go is donations or non-intrusive ads. Financial data will never be used for any purpose except providing the planning functionality.

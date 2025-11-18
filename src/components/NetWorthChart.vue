@@ -35,7 +35,10 @@ const props = defineProps<{
 const chartData = computed(() => {
   const labels = props.annualSummaries.map((summary) => `${summary.year} (age ${summary.age})`)
   const liquidData = props.annualSummaries.map((summary) => summary.endingLiquidAssets)
-  const fixedData = props.annualSummaries.map((summary) => summary.endingFixedAssets)
+  // Net fixed assets = fixed assets - debt
+  const netFixedData = props.annualSummaries.map(
+    (summary) => summary.endingFixedAssets - summary.endingTotalDebt
+  )
 
   return {
     labels,
@@ -50,8 +53,8 @@ const chartData = computed(() => {
         stack: 'assets',
       },
       {
-        label: 'Fixed Assets',
-        data: fixedData,
+        label: 'Net Fixed Assets',
+        data: netFixedData,
         borderColor: '#3498db',
         backgroundColor: 'rgba(52, 152, 219, 0.6)',
         tension: 0.1,
