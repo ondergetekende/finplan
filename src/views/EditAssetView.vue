@@ -230,10 +230,7 @@ function handleDelete() {
           placeholder="e.g., 3.5 for 3.5%"
           required
         />
-        <p class="help-text">
-          Annual appreciation or depreciation rate. Use positive for growth, negative for
-          depreciation.
-        </p>
+        <p class="help-text">Growth rate (positive) or depreciation (negative)</p>
       </div>
 
       <div v-if="showInterestRate" class="form-group">
@@ -242,10 +239,7 @@ function handleDelete() {
           label="Liquidation Month (optional)"
           :nullable="true"
         />
-        <p class="help-text">
-          Optional: Month when this asset will be sold/liquidated. The asset value will be
-          transferred to liquid assets.
-        </p>
+        <p class="help-text">When will you sell this asset?</p>
       </div>
 
       <div v-if="taxCountry" class="form-group">
