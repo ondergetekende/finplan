@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { usePlannerStore } from '@/stores/planner'
 import BasicInfoSummary from '@/components/BasicInfoSummary.vue'
-import BasicInfoWizard from '@/components/BasicInfoWizard.vue'
+import InlineOnboarding from '@/components/InlineOnboarding.vue'
+import EditBasicInfoForm from '@/components/EditBasicInfoForm.vue'
 import FinancialListItem from '@/components/FinancialListItem.vue'
 import ActionButtons from '@/components/ActionButtons.vue'
 import NetWorthChart from '@/components/NetWorthChart.vue'
@@ -14,51 +15,64 @@ const store = usePlannerStore()
 // Toggle for showing inflation-adjusted values
 const showInflationAdjusted = ref(false)
 
-// Auto-open wizard on first visit
-onMounted(() => {
-  // If user hasn't completed the wizard yet, open it automatically
-  if (!store.wizardCompleted) {
-    store.openWizard()
-  }
-})
+// Toggle for showing edit form
+const showEditForm = ref(false)
 
-function handleEditBasicInfo() {
-  store.openWizard()
+function handleOnboardingComplete(data: { birthDate: Month; taxCountry?: string }) {
+  store.saveBasicInfo({
+    birthDate: data.birthDate,
+    taxCountry: data.taxCountry,
+    liquidAssetsInterestRate: store.liquidAssetsInterestRate,
+    inflationRate: store.inflationRate,
+  })
 }
 
-function handleWizardSave(data: {
+function handleEditBasicInfo() {
+  showEditForm.value = true
+}
+
+function handleSaveBasicInfo(data: {
   birthDate: Month
   taxCountry?: string
   liquidAssetsInterestRate: number
   inflationRate: number
 }) {
   store.saveBasicInfo(data)
+  showEditForm.value = false
 }
 
-function handleWizardClose() {
-  store.closeWizard()
+function handleCancelEdit() {
+  showEditForm.value = false
 }
 </script>
 
 <template>
   <div class="dashboard">
-    <section class="birth-date-section">
+    <section v-if="!store.wizardCompleted" class="onboarding-section">
+      <InlineOnboarding
+        :initial-birth-date="store.birthDate"
+        :initial-tax-country="store.taxCountry"
+        @complete="handleOnboardingComplete"
+      />
+    </section>
+
+    <section v-else class="birth-date-section">
+      <EditBasicInfoForm
+        v-if="showEditForm"
+        :birth-date="store.birthDate"
+        :tax-country="store.taxCountry"
+        :liquid-assets-interest-rate="store.liquidAssetsInterestRate"
+        :inflation-rate="store.inflationRate"
+        @save="handleSaveBasicInfo"
+        @cancel="handleCancelEdit"
+      />
       <BasicInfoSummary
+        v-else
         :current-age="store.currentAge"
         :tax-country="store.taxCountry"
         :liquid-assets-interest-rate="store.liquidAssetsInterestRate"
         :inflation-rate="store.inflationRate"
         @edit="handleEditBasicInfo"
-      />
-
-      <BasicInfoWizard
-        :is-open="store.showWizard"
-        :birth-date="store.birthDate"
-        :tax-country="store.taxCountry"
-        :liquid-assets-interest-rate="store.liquidAssetsInterestRate"
-        :inflation-rate="store.inflationRate"
-        @close="handleWizardClose"
-        @save="handleWizardSave"
       />
     </section>
 
@@ -137,6 +151,10 @@ function handleWizardClose() {
   font-weight: 700;
   color: #111827;
   margin: 0;
+}
+
+.onboarding-section {
+  margin-bottom: 1.5rem;
 }
 
 .birth-date-section {
