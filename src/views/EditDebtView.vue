@@ -381,7 +381,7 @@ function handleDelete() {
       <div v-if="showDelayedStart" class="form-group checkbox-group">
         <label>
           <input type="checkbox" v-model="hasDelayedStart" />
-          Repayment will start at a future date
+          Delay payoff start
         </label>
       </div>
 
