@@ -54,7 +54,7 @@ watch(
       yearString.value = String(getYear(newValue))
       monthIndex.value = getMonthIndex(newValue)
     }
-  }
+  },
 )
 
 // Parsed year value

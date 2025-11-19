@@ -2,12 +2,7 @@
  * Financial projection calculation engine
  */
 
-import type {
-  UserProfile,
-  MonthlyProjection,
-  AnnualSummary,
-  ProjectionResult,
-} from '@/models'
+import type { UserProfile, MonthlyProjection, AnnualSummary, ProjectionResult } from '@/models'
 import { LiquidAsset, FixedAsset } from '@/models'
 import type { Month } from '@/types/month'
 import { getCurrentMonth, addMonths, formatMonth, monthDiff } from '@/types/month'
@@ -15,8 +10,7 @@ import {
   resolveTaxOption,
   calculateTax,
   calculateMonthlyIncomeTax,
-  calculateMonthlyTax,
-  type InflationAdjustment
+  type InflationAdjustment,
 } from './taxCalculator'
 
 const MAX_AGE = 100
@@ -127,7 +121,7 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
     // Tax brackets are adjusted based on months since projection start
     const inflationAdjustment: InflationAdjustment = {
       inflationRate: inflationRate ?? 0,
-      monthsSinceReference: monthIndex
+      monthsSinceReference: monthIndex,
     }
 
     // Initialize tax tracking for this month
@@ -145,13 +139,14 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
       const taxOption = resolveTaxOption(
         account.capitalGainsTaxId,
         profile.taxCountry,
-        'capital_gains'
+        'capital_gains',
       )
 
       if (taxOption && liquidInterest > 0) {
         // Calculate the portion of interest attributable to this account
         // (proportional to its share of total liquid assets)
-        const accountShare = account.amount / (liquidAccounts.reduce((sum, a) => sum + a.amount, 0) || 1)
+        const accountShare =
+          account.amount / (liquidAccounts.reduce((sum, a) => sum + a.amount, 0) || 1)
         const accountInterest = liquidInterest * accountShare
 
         // Calculate tax on this account's portion of interest (annualized)
@@ -173,12 +168,12 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
       asset.balance += valueChange
 
       // Apply capital gains tax on fixed asset appreciation
-      const originalAsset = fixedAccounts.find(a => a.id === asset.id)
+      const originalAsset = fixedAccounts.find((a) => a.id === asset.id)
       if (originalAsset && valueChange > 0) {
         const taxOption = resolveTaxOption(
           originalAsset.capitalGainsTaxId,
           profile.taxCountry,
-          'capital_gains'
+          'capital_gains',
         )
 
         if (taxOption) {
@@ -192,7 +187,11 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
       }
 
       // Check for liquidation at start of month (after appreciation for this month)
-      if (asset.liquidationDate !== undefined && currentMonth >= asset.liquidationDate && asset.balance > 0) {
+      if (
+        asset.liquidationDate !== undefined &&
+        currentMonth >= asset.liquidationDate &&
+        asset.balance > 0
+      ) {
         // Transfer asset value to liquid assets
         liquidAssetsBalance += asset.balance
         // Set asset balance to 0 for rest of projection
@@ -206,11 +205,7 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
     // Apply wealth tax on all assets
     // Wealth tax on liquid assets
     for (const account of liquidAccounts) {
-      const taxOption = resolveTaxOption(
-        account.wealthTaxId,
-        profile.taxCountry,
-        'wealth'
-      )
+      const taxOption = resolveTaxOption(account.wealthTaxId, profile.taxCountry, 'wealth')
 
       if (taxOption) {
         // Calculate the portion of liquid assets attributable to this account
@@ -228,13 +223,9 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
 
     // Wealth tax on fixed assets
     for (const asset of fixedAssetBalances) {
-      const originalAsset = fixedAccounts.find(a => a.id === asset.id)
+      const originalAsset = fixedAccounts.find((a) => a.id === asset.id)
       if (originalAsset) {
-        const taxOption = resolveTaxOption(
-          originalAsset.wealthTaxId,
-          profile.taxCountry,
-          'wealth'
-        )
+        const taxOption = resolveTaxOption(originalAsset.wealthTaxId, profile.taxCountry, 'wealth')
 
         if (taxOption && asset.balance > 0) {
           // Calculate wealth tax (monthly)
@@ -336,8 +327,8 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
     for (const cashFlow of cashFlows) {
       // Handle one-time transactions differently from recurring ones
       const shouldApply = cashFlow.isOneTime
-        ? currentMonth === cashFlow.startDate  // One-time: only on exact date
-        : isMonthInRange(currentMonth, cashFlow.startDate, cashFlow.endDate)  // Recurring: within date range
+        ? currentMonth === cashFlow.startDate // One-time: only on exact date
+        : isMonthInRange(currentMonth, cashFlow.startDate, cashFlow.endDate) // Recurring: within date range
 
       if (shouldApply) {
         // Get the monthly amount (getter handles frequency conversion)
@@ -354,11 +345,7 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
 
           // Calculate income tax (skip if 'after-tax')
           if (cashFlow.incomeTaxId !== 'after-tax') {
-            const taxOption = resolveTaxOption(
-              cashFlow.incomeTaxId,
-              profile.taxCountry,
-              'income'
-            )
+            const taxOption = resolveTaxOption(cashFlow.incomeTaxId, profile.taxCountry, 'income')
 
             if (taxOption) {
               // Calculate monthly income tax (using annualized income for brackets)
@@ -440,9 +427,7 @@ export function calculateProjections(profile: UserProfile): ProjectionResult {
     const startingFixedAssets = previousProjection
       ? previousProjection.fixedAssets
       : fixedAccounts.reduce((sum, account) => sum + account.amount, 0)
-    const startingTotalDebt = previousProjection
-      ? previousProjection.totalDebt
-      : initialTotalDebt
+    const startingTotalDebt = previousProjection ? previousProjection.totalDebt : initialTotalDebt
 
     const totalIncome = projections.reduce((sum, p) => sum + p.income, 0)
     const totalExpenses = projections.reduce((sum, p) => sum + p.expenses, 0)

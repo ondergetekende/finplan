@@ -25,9 +25,9 @@ export class Debt extends FinancialItem {
   readonly endDate?: Month
 
   // Payment strategy fields - only one should be set
-  readonly monthlyPrincipalPayment?: number  // Linear
-  readonly monthlyPayment?: number           // Annualized
-  readonly finalBalance?: number             // Interest-only
+  readonly monthlyPrincipalPayment?: number // Linear
+  readonly monthlyPayment?: number // Annualized
+  readonly finalBalance?: number // Interest-only
 
   constructor(data: {
     id?: string
@@ -64,10 +64,7 @@ export class Debt extends FinancialItem {
   /**
    * Calculate payment for current month based on remaining balance
    */
-  calculateMonthlyPayment(
-    currentBalance: number,
-    monthsRemaining?: number
-  ): DebtPayment {
+  calculateMonthlyPayment(currentBalance: number, monthsRemaining?: number): DebtPayment {
     const interest = this.getMonthlyInterest(currentBalance)
 
     // Linear: fixed principal payment
@@ -141,7 +138,7 @@ export class Debt extends FinancialItem {
       }
       if (this.monthlyPrincipalPayment < minInterest * 0.1) {
         warnings.push(
-          `Monthly principal payment is very low. Minimum interest is €${minInterest.toFixed(2)}/month`
+          `Monthly principal payment is very low. Minimum interest is €${minInterest.toFixed(2)}/month`,
         )
       }
     }
@@ -153,7 +150,7 @@ export class Debt extends FinancialItem {
       }
       if (this.monthlyPayment <= minInterest) {
         warnings.push(
-          `Monthly payment (€${this.monthlyPayment.toFixed(2)}) must be greater than minimum interest (€${minInterest.toFixed(2)}) to pay off debt`
+          `Monthly payment (€${this.monthlyPayment.toFixed(2)}) must be greater than minimum interest (€${minInterest.toFixed(2)}) to pay off debt`,
         )
       }
     }
@@ -168,7 +165,7 @@ export class Debt extends FinancialItem {
       }
       if (!this.endDate && (this.finalBalance ?? 0) < this.amount) {
         warnings.push(
-          'Interest-only debt without end date will never be paid off (no end date specified)'
+          'Interest-only debt without end date will never be paid off (no end date specified)',
         )
       }
     }
@@ -212,27 +209,36 @@ export class Debt extends FinancialItem {
   /**
    * Create a copy with updated properties
    */
-  with(updates: Partial<{
-    name: string
-    amount: number
-    annualInterestRate: number
-    startDate: Month | undefined
-    repaymentStartDate: Month | undefined
-    endDate: Month | undefined
-    monthlyPrincipalPayment: number | undefined
-    monthlyPayment: number | undefined
-    finalBalance: number | undefined
-  }>): Debt {
+  with(
+    updates: Partial<{
+      name: string
+      amount: number
+      annualInterestRate: number
+      startDate: Month | undefined
+      repaymentStartDate: Month | undefined
+      endDate: Month | undefined
+      monthlyPrincipalPayment: number | undefined
+      monthlyPayment: number | undefined
+      finalBalance: number | undefined
+    }>,
+  ): Debt {
     return new Debt({
       id: this.id,
       name: updates.name ?? this.name,
       amount: updates.amount ?? this.amount,
       annualInterestRate: updates.annualInterestRate ?? this.annualInterestRate,
       startDate: updates.startDate !== undefined ? updates.startDate : this.startDate,
-      repaymentStartDate: updates.repaymentStartDate !== undefined ? updates.repaymentStartDate : this.repaymentStartDate,
+      repaymentStartDate:
+        updates.repaymentStartDate !== undefined
+          ? updates.repaymentStartDate
+          : this.repaymentStartDate,
       endDate: updates.endDate !== undefined ? updates.endDate : this.endDate,
-      monthlyPrincipalPayment: updates.monthlyPrincipalPayment !== undefined ? updates.monthlyPrincipalPayment : this.monthlyPrincipalPayment,
-      monthlyPayment: updates.monthlyPayment !== undefined ? updates.monthlyPayment : this.monthlyPayment,
+      monthlyPrincipalPayment:
+        updates.monthlyPrincipalPayment !== undefined
+          ? updates.monthlyPrincipalPayment
+          : this.monthlyPrincipalPayment,
+      monthlyPayment:
+        updates.monthlyPayment !== undefined ? updates.monthlyPayment : this.monthlyPayment,
       finalBalance: updates.finalBalance !== undefined ? updates.finalBalance : this.finalBalance,
     })
   }

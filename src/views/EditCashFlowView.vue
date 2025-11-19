@@ -3,7 +3,7 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePlannerStore } from '@/stores/planner'
 import { getItemTypeById, getItemTypeButtonLabel } from '@/config/itemTypes'
-import type { CashFlowType, CashFlowFrequency } from '@/models'
+import { CashFlow, type CashFlowType, type CashFlowFrequency } from '@/models'
 import type { Month } from '@/types/month'
 import MonthEdit from '@/components/MonthEdit.vue'
 import { getTaxOptions, getTaxConfig } from '@/config/taxConfig'
@@ -54,8 +54,10 @@ const amountLabel = computed(() => {
       return 'Monthly Amount (€) *'
   }
 })
-const startDateLabel = computed(() => isOneTime.value ? 'Date *' : 'Start Month (optional)')
-const startDateHelpText = computed(() => isOneTime.value ? 'When this transaction occurs' : 'Leave empty to start from current month')
+const startDateLabel = computed(() => (isOneTime.value ? 'Date *' : 'Start Month (optional)'))
+const startDateHelpText = computed(() =>
+  isOneTime.value ? 'When this transaction occurs' : 'Leave empty to start from current month',
+)
 
 // Tax-related computed properties
 const taxCountry = computed(() => store.taxCountry)
@@ -98,7 +100,7 @@ onMounted(() => {
     // New cashflow with pre-selected type - load template values
     const itemTypeConfig = getItemTypeById(props.typeId)
     if (itemTypeConfig && itemTypeConfig.template) {
-      const template = itemTypeConfig.template as any
+      const template = itemTypeConfig.template as CashFlow
       name.value = template.name || ''
       amount.value = template.amount || 0
       cashFlowType.value = template.type || 'income'
@@ -200,11 +202,11 @@ function handleSave() {
     // Create new cashflow using template
     const itemTypeConfig = itemType.value
     if (itemTypeConfig && itemTypeConfig.template) {
-      const template = itemTypeConfig.template as any
+      const template = itemTypeConfig.template as CashFlow
       store.addCashFlow({
-        ...template,
         name: name.value.trim(),
         amount: amount.value,
+        type: template.type,
         startDate: startDate.value,
         endDate: endDate.value,
         followsInflation: followsInflation.value,
@@ -255,11 +257,7 @@ function handleDelete() {
           <option value="default">Default for {{ countryName }}</option>
           <option value="after-tax">After Tax (Net Income)</option>
           <option disabled>─────────</option>
-          <option
-            v-for="tax in incomeTaxOptions"
-            :key="tax.id"
-            :value="tax.id"
-          >
+          <option v-for="tax in incomeTaxOptions" :key="tax.id" :value="tax.id">
             {{ tax.name }}
           </option>
         </select>
@@ -270,21 +268,11 @@ function handleDelete() {
         <label>Frequency</label>
         <div class="radio-group">
           <label class="radio-label">
-            <input
-              type="radio"
-              :value="false"
-              v-model="isOneTime"
-              name="frequency"
-            />
+            <input type="radio" :value="false" v-model="isOneTime" name="frequency" />
             <span>Recurring</span>
           </label>
           <label class="radio-label">
-            <input
-              type="radio"
-              :value="true"
-              v-model="isOneTime"
-              name="frequency"
-            />
+            <input type="radio" :value="true" v-model="isOneTime" name="frequency" />
             <span>One-time</span>
           </label>
         </div>
@@ -294,30 +282,15 @@ function handleDelete() {
         <label>Amount Entry</label>
         <div class="radio-group">
           <label class="radio-label">
-            <input
-              type="radio"
-              value="weekly"
-              v-model="frequency"
-              name="amount-frequency"
-            />
+            <input type="radio" value="weekly" v-model="frequency" name="amount-frequency" />
             <span>Per Week</span>
           </label>
           <label class="radio-label">
-            <input
-              type="radio"
-              value="monthly"
-              v-model="frequency"
-              name="amount-frequency"
-            />
+            <input type="radio" value="monthly" v-model="frequency" name="amount-frequency" />
             <span>Per Month</span>
           </label>
           <label class="radio-label">
-            <input
-              type="radio"
-              value="annual"
-              v-model="frequency"
-              name="amount-frequency"
-            />
+            <input type="radio" value="annual" v-model="frequency" name="amount-frequency" />
             <span>Per Year</span>
           </label>
         </div>
@@ -350,14 +323,12 @@ function handleDelete() {
 
       <div class="form-group checkbox-group">
         <label class="checkbox-label">
-          <input
-            id="follows-inflation"
-            v-model="followsInflation"
-            type="checkbox"
-          />
+          <input id="follows-inflation" v-model="followsInflation" type="checkbox" />
           <span>Adjust for inflation</span>
         </label>
-        <p class="help-text">If enabled, this amount will increase annually based on the inflation rate</p>
+        <p class="help-text">
+          If enabled, this amount will increase annually based on the inflation rate
+        </p>
       </div>
 
       <div class="form-group">
@@ -371,15 +342,8 @@ function handleDelete() {
       </div>
 
       <div class="form-actions">
-        <button type="button" class="button button-secondary" @click="handleCancel">
-          Cancel
-        </button>
-        <button
-          v-if="isEditMode"
-          type="button"
-          class="button button-danger"
-          @click="handleDelete"
-        >
+        <button type="button" class="button button-secondary" @click="handleCancel">Cancel</button>
+        <button v-if="isEditMode" type="button" class="button button-danger" @click="handleDelete">
           Delete
         </button>
         <button type="submit" class="button button-primary">

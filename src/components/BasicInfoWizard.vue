@@ -13,8 +13,8 @@
             :key="step"
             class="progress-step"
             :class="{
-              'active': step === currentStep,
-              'completed': step < currentStep
+              active: step === currentStep,
+              completed: step < currentStep,
             }"
           >
             <div class="progress-circle">{{ step }}</div>
@@ -44,11 +44,7 @@
         </div>
 
         <div class="wizard-footer">
-          <button
-            v-if="currentStep > 1"
-            @click="goBack"
-            class="wizard-button secondary"
-          >
+          <button v-if="currentStep > 1" @click="goBack" class="wizard-button secondary">
             Back
           </button>
           <div class="spacer"></div>
@@ -91,13 +87,15 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'close': []
-  'save': [{
-    birthDate: Month
-    taxCountry?: string
-    liquidAssetsInterestRate: number
-    inflationRate: number
-  }]
+  close: []
+  save: [
+    {
+      birthDate: Month
+      taxCountry?: string
+      liquidAssetsInterestRate: number
+      inflationRate: number
+    },
+  ]
 }>()
 
 const currentStep = ref(1)
@@ -110,16 +108,19 @@ const tempLiquidAssetsInterestRate = ref(props.liquidAssetsInterestRate)
 const tempInflationRate = ref(props.inflationRate)
 
 // Watch for prop changes when wizard opens
-watch(() => props.isOpen, (isOpen) => {
-  if (isOpen) {
-    // Reset to current values when opening
-    tempBirthDate.value = props.birthDate
-    tempTaxCountry.value = props.taxCountry
-    tempLiquidAssetsInterestRate.value = props.liquidAssetsInterestRate
-    tempInflationRate.value = props.inflationRate
-    currentStep.value = 1
-  }
-})
+watch(
+  () => props.isOpen,
+  (isOpen) => {
+    if (isOpen) {
+      // Reset to current values when opening
+      tempBirthDate.value = props.birthDate
+      tempTaxCountry.value = props.taxCountry
+      tempLiquidAssetsInterestRate.value = props.liquidAssetsInterestRate
+      tempInflationRate.value = props.inflationRate
+      currentStep.value = 1
+    }
+  },
+)
 
 const tempCurrentAge = computed(() => {
   return tempBirthDate.value ? getAgeInYears(tempBirthDate.value) : null
@@ -132,10 +133,12 @@ const canProceed = computed(() => {
     case 2:
       return true // Tax country is optional
     case 3:
-      return tempLiquidAssetsInterestRate.value >= 0 &&
-             tempLiquidAssetsInterestRate.value <= 100 &&
-             tempInflationRate.value >= 0 &&
-             tempInflationRate.value <= 20
+      return (
+        tempLiquidAssetsInterestRate.value >= 0 &&
+        tempLiquidAssetsInterestRate.value <= 100 &&
+        tempInflationRate.value >= 0 &&
+        tempInflationRate.value <= 20
+      )
     default:
       return false
   }
@@ -172,7 +175,7 @@ function finish() {
       birthDate: tempBirthDate.value,
       taxCountry: tempTaxCountry.value,
       liquidAssetsInterestRate: tempLiquidAssetsInterestRate.value,
-      inflationRate: tempInflationRate.value
+      inflationRate: tempInflationRate.value,
     })
     emit('close')
   }

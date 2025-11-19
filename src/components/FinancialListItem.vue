@@ -3,8 +3,8 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePlannerStore } from '@/stores/planner'
 import type { CapitalAccount, CashFlow, AllDebtTypes } from '@/models'
-import { isAsset, isCashFlow, isLiquidAsset, isFixedAsset, Debt } from '@/models'
-import { getItemTypeById, getItemTypeButtonLabel } from '@/config/itemTypes'
+import { isAsset, isCashFlow, isLiquidAsset, Debt } from '@/models'
+import { getItemTypeById } from '@/config/itemTypes'
 
 const props = defineProps<{
   item: CapitalAccount | CashFlow | AllDebtTypes
@@ -19,13 +19,15 @@ const router = useRouter()
 
 // Determine item type and metadata
 const itemType = computed(() => {
-  const item = props.item as any
+  const item = props.item as CapitalAccount | CashFlow | AllDebtTypes
   if (isAsset(item)) {
     return isLiquidAsset(item) ? getItemTypeById('liquid') : getItemTypeById('fixed')
   } else if (isCashFlow(item)) {
     // For one-time cashflows, use specific templates
     if (item.isOneTime) {
-      return item.type === 'income' ? getItemTypeById('windfall') : getItemTypeById('one-time-expense')
+      return item.type === 'income'
+        ? getItemTypeById('windfall')
+        : getItemTypeById('one-time-expense')
     }
     return getItemTypeById(item.type)
   } else if (item instanceof Debt) {
@@ -34,7 +36,7 @@ const itemType = computed(() => {
       id: 'debt',
       category: 'debt' as const,
       color: '#f97316',
-      template: item
+      template: item,
     }
   }
   return undefined
@@ -42,7 +44,7 @@ const itemType = computed(() => {
 
 // Get the numeric value to edit based on item type
 const editableValue = computed(() => {
-  const item = props.item as any
+  const item = props.item as CapitalAccount | CashFlow | AllDebtTypes
   if (isAsset(item)) {
     return item.amount
   } else if (isCashFlow(item)) {
@@ -54,7 +56,7 @@ const editableValue = computed(() => {
 })
 
 const formattedAmount = computed(() => {
-  const item = props.item as any
+  const item = props.item as CapitalAccount | CashFlow | AllDebtTypes
   const formatter = new Intl.NumberFormat('en-EU', {
     style: 'currency',
     currency: 'EUR',
@@ -105,7 +107,7 @@ const badgeStyles = computed(() => {
 })
 
 function handleEdit() {
-  const item = props.item as any
+  const item = props.item as CapitalAccount | CashFlow | AllDebtTypes
   if (isAsset(item)) {
     router.push({ name: 'edit-asset', params: { id: item.id } })
   } else if (isCashFlow(item)) {
@@ -140,7 +142,7 @@ function saveAmount() {
   }
 
   // Update based on item type
-  const item = props.item as any
+  const item = props.item as CapitalAccount | CashFlow | AllDebtTypes
   if (isAsset(item)) {
     store.updateCapitalAccount(item.id, { amount: newValue })
   } else if (isCashFlow(item)) {
@@ -166,7 +168,9 @@ function handleKeydown(event: KeyboardEvent) {
   <div class="list-item" :style="itemStyles">
     <div class="item-header">
       <span class="item-name">{{ item.name }}</span>
-      <span class="item-badge" :style="badgeStyles">{{ itemType?.template?.name || (item instanceof Debt ? 'Debt' : '') }}</span>
+      <span class="item-badge" :style="badgeStyles">{{
+        itemType?.template?.name || (item instanceof Debt ? 'Debt' : '')
+      }}</span>
     </div>
     <div class="item-footer">
       <input
@@ -178,12 +182,7 @@ function handleKeydown(event: KeyboardEvent) {
         @blur="saveAmount"
         @keydown="handleKeydown"
       />
-      <span
-        v-else
-        class="item-amount"
-        @click="startEditing"
-        title="Click to edit"
-      >
+      <span v-else class="item-amount" @click="startEditing" title="Click to edit">
         {{ formattedAmount }}
       </span>
       <button class="edit-button" @click="handleEdit">Edit</button>

@@ -20,7 +20,7 @@ export class LiquidAsset extends FinancialItem {
     name: string,
     amount: number,
     wealthTaxId?: string,
-    capitalGainsTaxId?: string
+    capitalGainsTaxId?: string,
   ) {
     super(id, name)
 
@@ -36,13 +36,15 @@ export class LiquidAsset extends FinancialItem {
   /**
    * Create a copy of this asset with updated properties
    */
-  with(updates: Partial<Pick<LiquidAsset, 'name' | 'amount' | 'wealthTaxId' | 'capitalGainsTaxId'>>): LiquidAsset {
+  with(
+    updates: Partial<Pick<LiquidAsset, 'name' | 'amount' | 'wealthTaxId' | 'capitalGainsTaxId'>>,
+  ): LiquidAsset {
     return new LiquidAsset(
       this.id,
       updates.name ?? this.name,
       updates.amount ?? this.amount,
       updates.wealthTaxId !== undefined ? updates.wealthTaxId : this.wealthTaxId,
-      updates.capitalGainsTaxId !== undefined ? updates.capitalGainsTaxId : this.capitalGainsTaxId
+      updates.capitalGainsTaxId !== undefined ? updates.capitalGainsTaxId : this.capitalGainsTaxId,
     )
   }
 
@@ -64,13 +66,13 @@ export class LiquidAsset extends FinancialItem {
   /**
    * Deserialize from JSON
    */
-  static fromJSON(data: any): LiquidAsset {
+  static fromJSON(data: Record<string, unknown>): LiquidAsset {
     return new LiquidAsset(
-      data.id || crypto.randomUUID(),
-      data.name || '',
-      data.amount || 0,
-      data.wealthTaxId, // Optional, undefined if not present for backward compatibility
-      data.capitalGainsTaxId // Optional, undefined if not present for backward compatibility
+      (data.id as string) || crypto.randomUUID(),
+      (data.name as string) || '',
+      (data.amount as number) || 0,
+      data.wealthTaxId as string | undefined, // Optional, undefined if not present for backward compatibility
+      data.capitalGainsTaxId as string | undefined, // Optional, undefined if not present for backward compatibility
     )
   }
 
@@ -99,7 +101,7 @@ export class FixedAsset extends FinancialItem {
     annualInterestRate: number,
     liquidationDate?: Month,
     wealthTaxId?: string,
-    capitalGainsTaxId?: string
+    capitalGainsTaxId?: string,
   ) {
     super(id, name)
 
@@ -117,7 +119,19 @@ export class FixedAsset extends FinancialItem {
   /**
    * Create a copy of this asset with updated properties
    */
-  with(updates: Partial<Pick<FixedAsset, 'name' | 'amount' | 'annualInterestRate' | 'liquidationDate' | 'wealthTaxId' | 'capitalGainsTaxId'>>): FixedAsset {
+  with(
+    updates: Partial<
+      Pick<
+        FixedAsset,
+        | 'name'
+        | 'amount'
+        | 'annualInterestRate'
+        | 'liquidationDate'
+        | 'wealthTaxId'
+        | 'capitalGainsTaxId'
+      >
+    >,
+  ): FixedAsset {
     return new FixedAsset(
       this.id,
       updates.name ?? this.name,
@@ -125,7 +139,7 @@ export class FixedAsset extends FinancialItem {
       updates.annualInterestRate ?? this.annualInterestRate,
       updates.liquidationDate !== undefined ? updates.liquidationDate : this.liquidationDate,
       updates.wealthTaxId !== undefined ? updates.wealthTaxId : this.wealthTaxId,
-      updates.capitalGainsTaxId !== undefined ? updates.capitalGainsTaxId : this.capitalGainsTaxId
+      updates.capitalGainsTaxId !== undefined ? updates.capitalGainsTaxId : this.capitalGainsTaxId,
     )
   }
 
@@ -149,15 +163,15 @@ export class FixedAsset extends FinancialItem {
   /**
    * Deserialize from JSON
    */
-  static fromJSON(data: any): FixedAsset {
+  static fromJSON(data: Record<string, unknown>): FixedAsset {
     return new FixedAsset(
-      data.id || crypto.randomUUID(),
-      data.name || '',
-      data.amount || 0,
-      data.annualInterestRate || 0,
-      data.liquidationDate, // Optional, will be undefined for old data
-      data.wealthTaxId, // Optional, undefined if not present for backward compatibility
-      data.capitalGainsTaxId // Optional, undefined if not present for backward compatibility
+      (data.id as string) || crypto.randomUUID(),
+      (data.name as string) || '',
+      (data.amount as number) || 0,
+      (data.annualInterestRate as number) || 0,
+      data.liquidationDate as number | undefined, // Optional, will be undefined for old data
+      data.wealthTaxId as string | undefined, // Optional, undefined if not present for backward compatibility
+      data.capitalGainsTaxId as string | undefined, // Optional, undefined if not present for backward compatibility
     )
   }
 

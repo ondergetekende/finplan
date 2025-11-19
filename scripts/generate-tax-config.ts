@@ -87,8 +87,10 @@ function loadEnvFile() {
         let value = match[2].trim()
 
         // Remove surrounding quotes if present
-        if ((value.startsWith('"') && value.endsWith('"')) ||
-            (value.startsWith("'") && value.endsWith("'"))) {
+        if (
+          (value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'"))
+        ) {
           value = value.slice(1, -1)
         }
 
@@ -101,7 +103,10 @@ function loadEnvFile() {
 
     console.log('✓ Loaded environment variables from .env\n')
   } catch (error) {
-    console.warn('Warning: Failed to load .env file:', error instanceof Error ? error.message : String(error))
+    console.warn(
+      'Warning: Failed to load .env file:',
+      error instanceof Error ? error.message : String(error),
+    )
   }
 }
 
@@ -152,7 +157,6 @@ async function main() {
     console.log(`Tax configuration written to: ${outputPath}`)
     console.log('\nGenerated configuration:')
     console.log(JSON.stringify(taxConfig, null, 2))
-
   } catch (error) {
     console.error('\n❌ Error:', error instanceof Error ? error.message : String(error))
     process.exit(1)
@@ -230,22 +234,22 @@ async function fetchTaxConfigFromLLM(apiKey: string, prompt: string): Promise<Co
   const response = await fetch(OPENROUTER_API_URL, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
       'HTTP-Referer': 'https://github.com/ondergetekende/financial-planner',
-      'X-Title': 'MoneyMap Tax Config Generator'
+      'X-Title': 'MoneyMap Tax Config Generator',
     },
     body: JSON.stringify({
       model: MODEL,
       messages: [
         {
           role: 'user',
-          content: prompt
-        }
+          content: prompt,
+        },
       ],
       temperature: 0.1, // Lower temperature for more consistent, factual output
-      max_tokens: 4000
-    })
+      max_tokens: 4000,
+    }),
   })
 
   if (!response.ok) {
@@ -283,20 +287,28 @@ async function fetchTaxConfigFromLLM(apiKey: string, prompt: string): Promise<Co
   } catch (error) {
     console.error('Failed to parse LLM response as JSON:')
     console.error(content)
-    throw new Error(`Failed to parse JSON from LLM response: ${error instanceof Error ? error.message : String(error)}`)
+    throw new Error(
+      `Failed to parse JSON from LLM response: ${error instanceof Error ? error.message : String(error)}`,
+    )
   }
 }
 
 /**
  * Validate the tax configuration structure
  */
-function validateTaxConfig(config: any): asserts config is CountryTaxConfig {
+function validateTaxConfig(config: unknown): asserts config is CountryTaxConfig {
   if (!config || typeof config !== 'object') {
     throw new Error('Tax config must be an object')
   }
 
   // Required fields
-  const requiredFields = ['countryCode', 'countryName', 'incomeTaxes', 'wealthTaxes', 'capitalGainsTaxes']
+  const requiredFields = [
+    'countryCode',
+    'countryName',
+    'incomeTaxes',
+    'wealthTaxes',
+    'capitalGainsTaxes',
+  ]
   for (const field of requiredFields) {
     if (!(field in config)) {
       throw new Error(`Missing required field: ${field}`)
@@ -315,11 +327,7 @@ function validateTaxConfig(config: any): asserts config is CountryTaxConfig {
   }
 
   // Validate each tax option
-  const allTaxes = [
-    ...config.incomeTaxes,
-    ...config.wealthTaxes,
-    ...config.capitalGainsTaxes
-  ]
+  const allTaxes = [...config.incomeTaxes, ...config.wealthTaxes, ...config.capitalGainsTaxes]
 
   for (const tax of allTaxes) {
     if (!tax.id || typeof tax.id !== 'string') {
@@ -357,9 +365,9 @@ function validateTaxConfig(config: any): asserts config is CountryTaxConfig {
   }
 
   // Check that at least one default exists for each type
-  const hasDefaultIncome = config.incomeTaxes.some((t: any) => t.isDefault)
-  const hasDefaultWealth = config.wealthTaxes.some((t: any) => t.isDefault)
-  const hasDefaultCapitalGains = config.capitalGainsTaxes.some((t: any) => t.isDefault)
+  const hasDefaultIncome = config.incomeTaxes.some((t) => t.isDefault)
+  const hasDefaultWealth = config.wealthTaxes.some((t) => t.isDefault)
+  const hasDefaultCapitalGains = config.capitalGainsTaxes.some((t) => t.isDefault)
 
   if (!hasDefaultIncome && config.incomeTaxes.length > 0) {
     throw new Error('At least one income tax must be marked as default')

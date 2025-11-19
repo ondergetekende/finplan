@@ -128,7 +128,7 @@ function handleSave() {
 
   if (isEditMode.value && props.id) {
     // Update existing asset
-    const updates: any = {
+    const updates: Record<string, unknown> = {
       name: name.value.trim(),
       amount: amount.value,
       wealthTaxId: wealthTaxId.value,
@@ -237,7 +237,11 @@ function handleDelete() {
       </div>
 
       <div v-if="showInterestRate" class="form-group">
-        <MonthEdit v-model="liquidationDate" label="Liquidation Month (optional)" :nullable="true" />
+        <MonthEdit
+          v-model="liquidationDate"
+          label="Liquidation Month (optional)"
+          :nullable="true"
+        />
         <p class="help-text">
           Optional: Month when this asset will be sold/liquidated. The asset value will be
           transferred to liquid assets.
@@ -250,11 +254,7 @@ function handleDelete() {
           <option value="default">Default for {{ countryName }}</option>
           <option value="none">None</option>
           <option disabled>─────────</option>
-          <option
-            v-for="tax in wealthTaxOptions"
-            :key="tax.id"
-            :value="tax.id"
-          >
+          <option v-for="tax in wealthTaxOptions" :key="tax.id" :value="tax.id">
             {{ tax.name }}
           </option>
         </select>
@@ -267,11 +267,7 @@ function handleDelete() {
           <option value="default">Default for {{ countryName }}</option>
           <option value="none">None</option>
           <option disabled>─────────</option>
-          <option
-            v-for="tax in capitalGainsTaxOptions"
-            :key="tax.id"
-            :value="tax.id"
-          >
+          <option v-for="tax in capitalGainsTaxOptions" :key="tax.id" :value="tax.id">
             {{ tax.name }}
           </option>
         </select>
@@ -279,9 +275,7 @@ function handleDelete() {
       </div>
 
       <div class="form-actions">
-        <button type="button" class="button button-secondary" @click="handleCancel">
-          Cancel
-        </button>
+        <button type="button" class="button button-secondary" @click="handleCancel">Cancel</button>
         <button v-if="isEditMode" type="button" class="button button-danger" @click="handleDelete">
           Delete
         </button>

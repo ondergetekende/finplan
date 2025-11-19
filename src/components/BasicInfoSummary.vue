@@ -7,7 +7,9 @@
     <div class="summary-content">
       <div class="summary-item">
         <span class="summary-label">Age:</span>
-        <span class="summary-value">{{ currentAge !== null ? `${currentAge} years old` : 'Not set' }}</span>
+        <span class="summary-value">{{
+          currentAge !== null ? `${currentAge} years old` : 'Not set'
+        }}</span>
       </div>
       <div class="summary-item">
         <span class="summary-label">Tax Country:</span>

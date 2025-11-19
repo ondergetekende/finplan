@@ -1,12 +1,4 @@
-import {
-  FinancialItem,
-  LiquidAsset,
-  FixedAsset,
-  CashFlow,
-  LinearDebt,
-  AnnualizedDebt,
-  InterestOnlyDebt,
-} from '@/models'
+import { FinancialItem, LiquidAsset, FixedAsset, CashFlow, AnnualizedDebt } from '@/models'
 import { getCurrentMonth, addMonths } from '@/types/month'
 
 export interface ItemTypeDefinition {
@@ -30,8 +22,8 @@ export const ITEM_TYPES: ItemTypeDefinition[] = [
     template: new LiquidAsset(
       'template-liquid',
       'Savings',
-      25000 // Typical savings buffer (3-6 months expenses)
-    )
+      25000, // Typical savings buffer (3-6 months expenses)
+    ),
   },
   {
     id: 'house',
@@ -41,8 +33,8 @@ export const ITEM_TYPES: ItemTypeDefinition[] = [
       'template-house',
       'House',
       350000, // Average home value in Western Europe
-      3.5 // Typical property appreciation rate
-    )
+      3.5, // Typical property appreciation rate
+    ),
   },
   {
     id: 'car',
@@ -52,8 +44,8 @@ export const ITEM_TYPES: ItemTypeDefinition[] = [
       'template-car',
       'Car',
       35000, // Average car value in Western Europe
-      -3.5 // Typical car depreciation rate
-    )
+      -3.5, // Typical car depreciation rate
+    ),
   },
   {
     id: 'income',
@@ -63,8 +55,8 @@ export const ITEM_TYPES: ItemTypeDefinition[] = [
       'template-income',
       'Income',
       3500, // Median gross salary in Western Europe
-      'income'
-    )
+      'income',
+    ),
   },
   {
     id: 'expense',
@@ -74,8 +66,8 @@ export const ITEM_TYPES: ItemTypeDefinition[] = [
       'template-expense',
       'Expense',
       2500, // Typical monthly living expenses
-      'expense'
-    )
+      'expense',
+    ),
   },
   {
     id: 'windfall',
@@ -89,8 +81,8 @@ export const ITEM_TYPES: ItemTypeDefinition[] = [
       getCurrentMonth(), // Requires a date for one-time transactions
       undefined,
       false,
-      true // isOneTime
-    )
+      true, // isOneTime
+    ),
   },
   {
     id: 'mortgage',
@@ -104,7 +96,7 @@ export const ITEM_TYPES: ItemTypeDefinition[] = [
       monthlyPayment: 1500, // Standard monthly payment
       startDate: getCurrentMonth(), // Current month
       endDate: addMonths(getCurrentMonth(), 360), // 30 years from now (30 * 12 = 360 months)
-    })
+    }),
   },
   {
     id: 'loan',
@@ -118,22 +110,22 @@ export const ITEM_TYPES: ItemTypeDefinition[] = [
       monthlyPayment: 600,
       startDate: getCurrentMonth(), // Current month
       endDate: addMonths(getCurrentMonth(), 360), // 30 years from now (30 * 12 = 360 months)
-    })
+    }),
   },
 ]
 
 export function getItemTypeById(id: string): ItemTypeDefinition | undefined {
-  return ITEM_TYPES.find(type => type.id === id)
+  return ITEM_TYPES.find((type) => type.id === id)
 }
 
 export function getAssetTypes(): ItemTypeDefinition[] {
-  return ITEM_TYPES.filter(type => type.category === 'asset')
+  return ITEM_TYPES.filter((type) => type.category === 'asset')
 }
 
 export function getCashFlowTypes(): ItemTypeDefinition[] {
-  return ITEM_TYPES.filter(type => type.category === 'cashflow')
+  return ITEM_TYPES.filter((type) => type.category === 'cashflow')
 }
 
 export function getDebtTypes(): ItemTypeDefinition[] {
-  return ITEM_TYPES.filter(type => type.category === 'debt')
+  return ITEM_TYPES.filter((type) => type.category === 'debt')
 }

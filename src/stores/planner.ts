@@ -12,6 +12,8 @@ import {
   type CapitalAccount,
   type ProjectionResult,
   type AllDebtTypes,
+  type CashFlowType,
+  type CashFlowFrequency,
 } from '@/models'
 import { storageService } from '@/services/storage'
 import { calculateProjections } from '@/services/calculator'
@@ -43,7 +45,7 @@ export const usePlannerStore = defineStore('planner', () => {
       liquidAssetsInterestRate.value,
       debts.value as AllDebtTypes[],
       inflationRate.value,
-      taxCountry.value
+      taxCountry.value,
     )
   })
 
@@ -56,8 +58,7 @@ export const usePlannerStore = defineStore('planner', () => {
   )
 
   const hasData = computed(
-    () =>
-      capitalAccounts.value.length > 0 || cashFlows.value.length > 0 || debts.value.length > 0,
+    () => capitalAccounts.value.length > 0 || cashFlows.value.length > 0 || debts.value.length > 0,
   )
 
   // New computed properties for unified list
@@ -85,7 +86,9 @@ export const usePlannerStore = defineStore('planner', () => {
       .reduce((sum, cf) => sum + cf.annualAmount, 0),
   )
 
-  const totalDebt = computed(() => debts.value.reduce((sum: number, debt: AllDebtTypes) => sum + debt.amount, 0))
+  const totalDebt = computed(() =>
+    debts.value.reduce((sum: number, debt: AllDebtTypes) => sum + debt.amount, 0),
+  )
 
   // Actions
   function setBirthDate(month: Month) {
@@ -137,8 +140,22 @@ export const usePlannerStore = defineStore('planner', () => {
 
   function addCapitalAccount(
     account:
-      | { type: 'liquid'; name: string; amount: number; wealthTaxId?: string; capitalGainsTaxId?: string }
-      | { type: 'fixed'; name: string; amount: number; annualInterestRate: number; liquidationDate?: Month; wealthTaxId?: string; capitalGainsTaxId?: string }
+      | {
+          type: 'liquid'
+          name: string
+          amount: number
+          wealthTaxId?: string
+          capitalGainsTaxId?: string
+        }
+      | {
+          type: 'fixed'
+          name: string
+          amount: number
+          annualInterestRate: number
+          liquidationDate?: Month
+          wealthTaxId?: string
+          capitalGainsTaxId?: string
+        },
   ) {
     const id = crypto.randomUUID()
     let newAccount: CapitalAccount
@@ -151,7 +168,7 @@ export const usePlannerStore = defineStore('planner', () => {
         account.annualInterestRate,
         account.liquidationDate,
         account.wealthTaxId,
-        account.capitalGainsTaxId
+        account.capitalGainsTaxId,
       )
     } else {
       newAccount = new LiquidAsset(
@@ -159,7 +176,7 @@ export const usePlannerStore = defineStore('planner', () => {
         account.name,
         account.amount,
         account.wealthTaxId,
-        account.capitalGainsTaxId
+        account.capitalGainsTaxId,
       )
     }
 
@@ -173,9 +190,13 @@ export const usePlannerStore = defineStore('planner', () => {
       const existing = capitalAccounts.value[index]
 
       if (existing instanceof FixedAsset) {
-        capitalAccounts.value[index] = existing.with(updates as any)
+        capitalAccounts.value[index] = existing.with(
+          updates as Partial<Omit<FixedAsset, 'id' | 'assetType'>>,
+        )
       } else {
-        capitalAccounts.value[index] = (existing as LiquidAsset).with(updates as any)
+        capitalAccounts.value[index] = (existing as LiquidAsset).with(
+          updates as Partial<Omit<LiquidAsset, 'id' | 'assetType'>>,
+        )
       }
 
       recalculate()
@@ -187,7 +208,17 @@ export const usePlannerStore = defineStore('planner', () => {
     recalculate()
   }
 
-  function addCashFlow(cashFlow: Omit<CashFlow, 'id'>) {
+  function addCashFlow(cashFlow: {
+    name: string
+    amount: number
+    type: CashFlowType
+    startDate?: Month
+    endDate?: Month
+    followsInflation: boolean
+    isOneTime: boolean
+    incomeTaxId?: string
+    frequency: CashFlowFrequency
+  }) {
     const newCashFlow = new CashFlow(
       crypto.randomUUID(),
       cashFlow.name,
@@ -198,7 +229,7 @@ export const usePlannerStore = defineStore('planner', () => {
       cashFlow.followsInflation,
       cashFlow.isOneTime,
       cashFlow.incomeTaxId,
-      cashFlow.frequency
+      cashFlow.frequency,
     )
     cashFlows.value.push(newCashFlow)
     recalculate()
@@ -209,7 +240,7 @@ export const usePlannerStore = defineStore('planner', () => {
     if (index !== -1) {
       const existing = cashFlows.value[index]
       if (existing) {
-        cashFlows.value[index] = existing.with(updates as any)
+        cashFlows.value[index] = existing.with(updates as Partial<Omit<CashFlow, 'id'>>)
       }
       recalculate()
     }
@@ -230,7 +261,7 @@ export const usePlannerStore = defineStore('planner', () => {
     if (index !== -1) {
       const existing = debts.value[index]
       if (existing) {
-        debts.value[index] = existing.with(updates as any)
+        debts.value[index] = existing.with(updates as Partial<Omit<typeof existing, 'id'>>)
       }
       recalculate()
     }

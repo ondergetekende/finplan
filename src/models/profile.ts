@@ -28,7 +28,7 @@ export class UserProfile {
     liquidAssetsInterestRate: number,
     debts: Debt[] = [],
     inflationRate: number = 2.5,
-    taxCountry?: string
+    taxCountry?: string,
   ) {
     if (birthDate === undefined || typeof birthDate !== 'number') {
       throw new Error('UserProfile birthDate must be a valid Month value')
@@ -109,7 +109,7 @@ export class UserProfile {
       updates.liquidAssetsInterestRate ?? this.liquidAssetsInterestRate,
       updates.debts ?? this.debts,
       updates.inflationRate ?? this.inflationRate,
-      updates.taxCountry ?? this.taxCountry
+      updates.taxCountry ?? this.taxCountry,
     )
   }
 
@@ -131,23 +131,30 @@ export class UserProfile {
   /**
    * Deserialize from JSON
    */
-  static fromJSON(data: any): UserProfile {
+  static fromJSON(data: Record<string, unknown>): UserProfile {
     // Handle legacy data without assetType field
-    const capitalAccounts = (data.capitalAccounts || []).map((acc: any) => {
-      // Determine asset type
-      const assetType = acc.assetType || (acc.annualInterestRate !== undefined ? 'fixed' : 'liquid')
+    const capitalAccounts = ((data.capitalAccounts as Array<Record<string, unknown>>) || []).map(
+      (acc) => {
+        // Determine asset type
+        const assetType =
+          (acc.assetType as string) || (acc.annualInterestRate !== undefined ? 'fixed' : 'liquid')
 
-      if (assetType === 'fixed') {
-        return FixedAsset.fromJSON(acc)
-      } else {
-        return LiquidAsset.fromJSON(acc)
-      }
-    })
+        if (assetType === 'fixed') {
+          return FixedAsset.fromJSON(acc)
+        } else {
+          return LiquidAsset.fromJSON(acc)
+        }
+      },
+    )
 
-    const cashFlows = (data.cashFlows || []).map((cf: any) => CashFlow.fromJSON(cf))
+    const cashFlows = ((data.cashFlows as Array<Record<string, unknown>>) || []).map((cf) =>
+      CashFlow.fromJSON(cf),
+    )
 
     // Handle backward compatibility - default to empty array if debts not present
-    const debts = (data.debts || []).map((debt: any) => Debt.fromJSON(debt))
+    const debts = ((data.debts as Array<Record<string, unknown>>) || []).map((debt) =>
+      Debt.fromJSON(debt),
+    )
 
     // Handle birthDate - could be Month (number) or legacy string
     let birthDate: Month
@@ -165,10 +172,10 @@ export class UserProfile {
       birthDate,
       capitalAccounts,
       cashFlows,
-      data.liquidAssetsInterestRate || 0,
+      (data.liquidAssetsInterestRate as number) || 0,
       debts,
-      data.inflationRate ?? 2.5, // Default to 2.5% for backward compatibility
-      data.taxCountry // Optional, undefined if not present for backward compatibility
+      (data.inflationRate as number) ?? 2.5, // Default to 2.5% for backward compatibility
+      data.taxCountry as string | undefined, // Optional, undefined if not present for backward compatibility
     )
   }
 }

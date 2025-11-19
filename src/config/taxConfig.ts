@@ -98,7 +98,6 @@ import LU_TAX_CONFIG from './tax.LU.json'
 import NL_TAX_CONFIG from './tax.NL.json'
 import US_TAX_CONFIG from './tax.US.json'
 
-
 // =============================================================================
 // EXPORTS
 // =============================================================================
@@ -134,10 +133,7 @@ export function getTaxConfig(countryCode: string): CountryTaxConfig | undefined 
 /**
  * Get all tax options of a specific type for a country
  */
-export function getTaxOptions(
-  countryCode: string,
-  taxType: TaxType
-): TaxOption[] {
+export function getTaxOptions(countryCode: string, taxType: TaxType): TaxOption[] {
   const config = getTaxConfig(countryCode)
   if (!config) return []
 
@@ -156,41 +152,27 @@ export function getTaxOptions(
 /**
  * Get the default tax option for a country and tax type
  */
-export function getDefaultTaxOption(
-  countryCode: string,
-  taxType: TaxType
-): TaxOption | undefined {
+export function getDefaultTaxOption(countryCode: string, taxType: TaxType): TaxOption | undefined {
   const options = getTaxOptions(countryCode, taxType)
-  return options.find(option => option.isDefault)
+  return options.find((option) => option.isDefault)
 }
 
 /**
  * Find a specific tax option by ID
  */
-export function findTaxOption(
-  taxId: string,
-  countryCode?: string
-): TaxOption | undefined {
+export function findTaxOption(taxId: string, countryCode?: string): TaxOption | undefined {
   if (countryCode) {
     // Search in specific country
     const config = getTaxConfig(countryCode)
     if (!config) return undefined
 
-    const allOptions = [
-      ...config.incomeTaxes,
-      ...config.wealthTaxes,
-      ...config.capitalGainsTaxes
-    ]
-    return allOptions.find(option => option.id === taxId)
+    const allOptions = [...config.incomeTaxes, ...config.wealthTaxes, ...config.capitalGainsTaxes]
+    return allOptions.find((option) => option.id === taxId)
   } else {
     // Search across all countries
     for (const config of Object.values(TAX_CONFIGS)) {
-      const allOptions = [
-        ...config.incomeTaxes,
-        ...config.wealthTaxes,
-        ...config.capitalGainsTaxes
-      ]
-      const found = allOptions.find(option => option.id === taxId)
+      const allOptions = [...config.incomeTaxes, ...config.wealthTaxes, ...config.capitalGainsTaxes]
+      const found = allOptions.find((option) => option.id === taxId)
       if (found) return found
     }
   }

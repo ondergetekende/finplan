@@ -22,7 +22,16 @@ import {
 } from 'chart.js'
 import type { AnnualSummary } from '@/models'
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+)
 
 const props = defineProps<{
   annualSummaries: AnnualSummary[]

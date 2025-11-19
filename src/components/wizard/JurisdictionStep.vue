@@ -2,19 +2,16 @@
   <div class="jurisdiction-step">
     <h3 class="step-title">Where do you pay taxes?</h3>
     <p class="step-description">
-      Select your tax jurisdiction to enable accurate tax calculations for your financial projections.
-      Different countries have different income tax, wealth tax, and capital gains tax structures.
-      You can skip this step if you don't want to include taxes in your calculations.
+      Select your tax jurisdiction to enable accurate tax calculations for your financial
+      projections. Different countries have different income tax, wealth tax, and capital gains tax
+      structures. You can skip this step if you don't want to include taxes in your calculations.
     </p>
 
     <div class="form-section">
       <label class="form-label">Tax Country</label>
 
       <div class="country-options">
-        <label
-          class="country-option"
-          :class="{ selected: taxCountry === undefined }"
-        >
+        <label class="country-option" :class="{ selected: taxCountry === undefined }">
           <input
             type="radio"
             name="tax-country"
@@ -57,8 +54,8 @@
 
     <div v-if="taxCountry" class="info-box">
       <div class="info-content">
-        <strong>Tax calculations enabled</strong> for {{ selectedCountryName }}.
-        You'll be able to configure specific tax options for your income, wealth, and capital gains later.
+        <strong>Tax calculations enabled</strong> for {{ selectedCountryName }}. You'll be able to
+        configure specific tax options for your income, wealth, and capital gains later.
       </div>
     </div>
 

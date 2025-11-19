@@ -4,7 +4,7 @@ import {
   calculateProgressiveTax,
   resolveTaxOption,
   calculateMonthlyTax,
-  calculateMonthlyIncomeTax
+  calculateMonthlyIncomeTax,
 } from '../taxCalculator'
 import type { TaxOption, TaxBracket, InflationAdjustment } from '../../config/taxConfig'
 
@@ -16,7 +16,7 @@ describe('taxCalculator', () => {
         name: 'Test Flat Tax',
         type: 'income',
         isDefault: true,
-        rate: 25
+        rate: 25,
       }
 
       expect(calculateTax(1000, taxOption)).toBe(250)
@@ -29,7 +29,7 @@ describe('taxCalculator', () => {
         name: 'Test Flat Tax',
         type: 'income',
         isDefault: true,
-        rate: 25
+        rate: 25,
       }
 
       expect(calculateTax(0, taxOption)).toBe(0)
@@ -43,7 +43,7 @@ describe('taxCalculator', () => {
         type: 'wealth',
         isDefault: true,
         rate: 10,
-        exemptionThreshold: 50000
+        exemptionThreshold: 50000,
       }
 
       // Below threshold: no tax
@@ -64,8 +64,8 @@ describe('taxCalculator', () => {
         brackets: [
           { threshold: 0, rate: 10 },
           { threshold: 10000, rate: 20 },
-          { threshold: 50000, rate: 30 }
-        ]
+          { threshold: 50000, rate: 30 },
+        ],
       }
 
       // In first bracket
@@ -90,7 +90,7 @@ describe('taxCalculator', () => {
         id: 'test-no-tax',
         name: 'Test No Tax',
         type: 'capital_gains',
-        isDefault: true
+        isDefault: true,
       }
 
       expect(calculateTax(10000, taxOption)).toBe(0)
@@ -101,7 +101,7 @@ describe('taxCalculator', () => {
     const brackets: TaxBracket[] = [
       { threshold: 0, rate: 10 },
       { threshold: 10000, rate: 20 },
-      { threshold: 50000, rate: 30 }
+      { threshold: 50000, rate: 30 },
     ]
 
     it('should calculate tax in first bracket', () => {
@@ -137,7 +137,7 @@ describe('taxCalculator', () => {
       const unsortedBrackets: TaxBracket[] = [
         { threshold: 50000, rate: 30 },
         { threshold: 0, rate: 10 },
-        { threshold: 10000, rate: 20 }
+        { threshold: 10000, rate: 20 },
       ]
 
       // Should still calculate correctly after sorting
@@ -162,7 +162,7 @@ describe('taxCalculator', () => {
         { threshold: 95375, rate: 24 },
         { threshold: 182100, rate: 32 },
         { threshold: 231250, rate: 35 },
-        { threshold: 578125, rate: 37 }
+        { threshold: 578125, rate: 37 },
       ]
 
       // Test $50,000 income
@@ -199,7 +199,7 @@ describe('taxCalculator', () => {
       const option = resolveTaxOption('default', 'NL', 'income')
 
       expect(option).not.toBeNull()
-      expect(option?.id).toBe('nl-box1')
+      expect(option?.id).toBe('nl-income-box1')
       expect(option?.isDefault).toBe(true)
       expect(option?.type).toBe('income')
     })
@@ -211,11 +211,11 @@ describe('taxCalculator', () => {
     })
 
     it('should resolve specific tax option by ID', () => {
-      const option = resolveTaxOption('nl-box2', 'NL', 'income')
+      const option = resolveTaxOption('nl-income-box2', 'NL', 'income')
 
       expect(option).not.toBeNull()
-      expect(option?.id).toBe('nl-box2')
-      expect(option?.name).toBe('Box 2 - Substantial Interest')
+      expect(option?.id).toBe('nl-income-box2')
+      expect(option?.name).toBe('Box 2 Income Tax (Substantial Business Interest)')
       expect(option?.type).toBe('income')
     })
 
@@ -223,7 +223,7 @@ describe('taxCalculator', () => {
       const option = resolveTaxOption('default', 'US', 'income')
 
       expect(option).not.toBeNull()
-      expect(option?.id).toBe('us-federal-single')
+      expect(option?.id).toBe('us-income-single')
       expect(option?.isDefault).toBe(true)
     })
 
@@ -231,7 +231,7 @@ describe('taxCalculator', () => {
       const option = resolveTaxOption('default', 'GB', 'income')
 
       expect(option).not.toBeNull()
-      expect(option?.id).toBe('gb-income')
+      expect(option?.id).toBe('gb-income-standard')
       expect(option?.isDefault).toBe(true)
     })
 
@@ -243,7 +243,7 @@ describe('taxCalculator', () => {
 
     it('should return null when tax option type does not match', () => {
       // Try to resolve an income tax as a wealth tax
-      const option = resolveTaxOption('nl-box1', 'NL', 'wealth')
+      const option = resolveTaxOption('nl-income-box1', 'NL', 'wealth')
 
       expect(option).toBeNull()
     })
@@ -256,7 +256,7 @@ describe('taxCalculator', () => {
         name: 'Test Tax',
         type: 'wealth',
         isDefault: true,
-        rate: 12 // 12% annual = 1% monthly
+        rate: 12, // 12% annual = 1% monthly
       }
 
       const annualAmount = 100000
@@ -274,8 +274,8 @@ describe('taxCalculator', () => {
         isDefault: true,
         brackets: [
           { threshold: 0, rate: 10 },
-          { threshold: 50000, rate: 20 }
-        ]
+          { threshold: 50000, rate: 20 },
+        ],
       }
 
       const annualAmount = 100000
@@ -296,7 +296,7 @@ describe('taxCalculator', () => {
         name: 'Test Income Tax',
         type: 'income',
         isDefault: true,
-        rate: 25
+        rate: 25,
       }
 
       const monthlyIncome = 5000
@@ -317,8 +317,8 @@ describe('taxCalculator', () => {
         brackets: [
           { threshold: 0, rate: 10 },
           { threshold: 10000, rate: 20 },
-          { threshold: 50000, rate: 30 }
-        ]
+          { threshold: 50000, rate: 30 },
+        ],
       }
 
       const monthlyIncome = 5000 // Annual: 60000
@@ -340,7 +340,7 @@ describe('taxCalculator', () => {
         type: 'income',
         isDefault: true,
         rate: 20,
-        exemptionThreshold: 12000
+        exemptionThreshold: 12000,
       }
 
       const monthlyIncome = 1000 // Annual: 12000 (exactly at threshold)
@@ -352,10 +352,7 @@ describe('taxCalculator', () => {
       expect(monthlyTax).toBe(0)
 
       const higherMonthlyIncome = 2000 // Annual: 24000
-      const higherMonthlyTax = calculateMonthlyIncomeTax(
-        higherMonthlyIncome,
-        taxOption
-      )
+      const higherMonthlyTax = calculateMonthlyIncomeTax(higherMonthlyIncome, taxOption)
 
       // Annual income = 24000
       // Taxable = 24000 - 12000 = 12000
@@ -373,13 +370,13 @@ describe('taxCalculator', () => {
         type: 'wealth',
         isDefault: true,
         rate: 10,
-        exemptionThreshold: 50000
+        exemptionThreshold: 50000,
       }
 
       // After 1 year at 3% inflation
       const inflationAdjustment: InflationAdjustment = {
         inflationRate: 3,
-        monthsSinceReference: 12
+        monthsSinceReference: 12,
       }
 
       // Adjusted threshold: 50000 * 1.03 = 51500
@@ -402,14 +399,14 @@ describe('taxCalculator', () => {
         brackets: [
           { threshold: 0, rate: 10 },
           { threshold: 50000, rate: 20 },
-          { threshold: 100000, rate: 30 }
-        ]
+          { threshold: 100000, rate: 30 },
+        ],
       }
 
       // After 2 years at 2.5% inflation
       const inflationAdjustment: InflationAdjustment = {
         inflationRate: 2.5,
-        monthsSinceReference: 24
+        monthsSinceReference: 24,
       }
 
       // Adjusted brackets:
@@ -441,14 +438,14 @@ describe('taxCalculator', () => {
         isDefault: true,
         brackets: [
           { threshold: 0, rate: 36.93 },
-          { threshold: 73031, rate: 49.5 }
-        ]
+          { threshold: 73031, rate: 49.5 },
+        ],
       }
 
       // After 10 years at 2% inflation
       const inflationAdjustment: InflationAdjustment = {
         inflationRate: 2,
-        monthsSinceReference: 120
+        monthsSinceReference: 120,
       }
 
       // Annual income of €60,000
@@ -470,11 +467,7 @@ describe('taxCalculator', () => {
       // 73031 * 0.3693 + 16969 * 0.495 = 26,972.35 + 8,399.66 = 35,371.98
       expect(higherTaxNoInflation).toBeCloseTo(35370, 0)
 
-      const higherTaxWithInflation = calculateTax(
-        higherIncome,
-        nlBox1,
-        inflationAdjustment
-      )
+      const higherTaxWithInflation = calculateTax(higherIncome, nlBox1, inflationAdjustment)
       // With inflation-adjusted threshold
       expect(higherTaxWithInflation).toBeCloseTo(33360, 0)
       expect(higherTaxWithInflation).toBeLessThan(higherTaxNoInflation)
@@ -487,13 +480,13 @@ describe('taxCalculator', () => {
         type: 'wealth',
         isDefault: true,
         exemptionThreshold: 57000,
-        rate: 36
+        rate: 36,
       }
 
       // After 5 years at 2.5% inflation
       const inflationAdjustment: InflationAdjustment = {
         inflationRate: 2.5,
-        monthsSinceReference: 60
+        monthsSinceReference: 60,
       }
 
       // Wealth of €100,000
@@ -518,8 +511,8 @@ describe('taxCalculator', () => {
         isDefault: true,
         brackets: [
           { threshold: 0, rate: 10 },
-          { threshold: 50000, rate: 20 }
-        ]
+          { threshold: 50000, rate: 20 },
+        ],
       }
 
       const monthlyIncome = 5000 // Annual: 60000
@@ -527,7 +520,7 @@ describe('taxCalculator', () => {
       // After 1 year at 3% inflation
       const inflationAdjustment: InflationAdjustment = {
         inflationRate: 3,
-        monthsSinceReference: 12
+        monthsSinceReference: 12,
       }
 
       // Without inflation: 50000*0.1 + 10000*0.2 = 5000 + 2000 = 7000
@@ -541,7 +534,7 @@ describe('taxCalculator', () => {
       const monthlyTaxWithInflation = calculateMonthlyIncomeTax(
         monthlyIncome,
         taxOption,
-        inflationAdjustment
+        inflationAdjustment,
       )
       expect(monthlyTaxWithInflation).toBeCloseTo(570.83, 1)
       expect(monthlyTaxWithInflation).toBeLessThan(monthlyTaxNoInflation)
@@ -555,13 +548,13 @@ describe('taxCalculator', () => {
         isDefault: true,
         brackets: [
           { threshold: 0, rate: 10 },
-          { threshold: 50000, rate: 20 }
-        ]
+          { threshold: 50000, rate: 20 },
+        ],
       }
 
       const inflationAdjustment: InflationAdjustment = {
         inflationRate: 0,
-        monthsSinceReference: 60
+        monthsSinceReference: 60,
       }
 
       // With 0% inflation, should be same as no inflation adjustment
@@ -580,13 +573,13 @@ describe('taxCalculator', () => {
         isDefault: true,
         brackets: [
           { threshold: 0, rate: 10 },
-          { threshold: 50000, rate: 20 }
-        ]
+          { threshold: 50000, rate: 20 },
+        ],
       }
 
       const inflationAdjustment: InflationAdjustment = {
         inflationRate: 5,
-        monthsSinceReference: 0
+        monthsSinceReference: 0,
       }
 
       // With 0 months, should be same as no inflation adjustment
@@ -607,8 +600,8 @@ describe('taxCalculator', () => {
         isDefault: true,
         brackets: [
           { threshold: 0, rate: 36.93 },
-          { threshold: 73031, rate: 49.5 }
-        ]
+          { threshold: 73031, rate: 49.5 },
+        ],
       }
 
       // Monthly income of €5000 (annual €60000)
@@ -628,7 +621,7 @@ describe('taxCalculator', () => {
         isDefault: true,
         exemptionThreshold: 57000,
         rate: 36,
-        notes: 'Simplified - should use deemed return'
+        notes: 'Simplified - should use deemed return',
       }
 
       // €100,000 in assets
@@ -647,7 +640,7 @@ describe('taxCalculator', () => {
         type: 'capital_gains',
         isDefault: true,
         exemptionThreshold: 3000,
-        rate: 10
+        rate: 10,
       }
 
       // £10,000 in gains
@@ -664,7 +657,7 @@ describe('taxCalculator', () => {
 
     it('should calculate US federal income tax correctly', () => {
       const usFederal: TaxOption = {
-        id: 'us-federal-single',
+        id: 'us-income-single',
         name: 'US Federal Income Tax',
         type: 'income',
         isDefault: true,
@@ -672,8 +665,8 @@ describe('taxCalculator', () => {
           { threshold: 0, rate: 10 },
           { threshold: 11000, rate: 12 },
           { threshold: 44725, rate: 22 },
-          { threshold: 95375, rate: 24 }
-        ]
+          { threshold: 95375, rate: 24 },
+        ],
       }
 
       // Monthly income of $5000 (annual $60000)

@@ -2,15 +2,13 @@
   <div class="returns-inflation-step">
     <h3 class="step-title">Investment Assumptions</h3>
     <p class="step-description">
-      Set your expected investment returns and inflation rate. These assumptions will be used
-      to project your financial future. You can adjust these at any time.
+      Set your expected investment returns and inflation rate. These assumptions will be used to
+      project your financial future. You can adjust these at any time.
     </p>
 
     <div class="form-section">
       <div class="form-field">
-        <label for="liquid-assets-rate" class="field-label">
-          Expected Annual Returns (%)
-        </label>
+        <label for="liquid-assets-rate" class="field-label"> Expected Annual Returns (%) </label>
         <div class="field-description">
           The average annual return you expect on your liquid assets (savings, investments, stocks).
         </div>
@@ -41,9 +39,7 @@
       </div>
 
       <div class="form-field">
-        <label for="inflation-rate" class="field-label">
-          Expected Annual Inflation (%)
-        </label>
+        <label for="inflation-rate" class="field-label"> Expected Annual Inflation (%) </label>
         <div class="field-description">
           The average annual inflation rate you expect over the long term.
         </div>
@@ -83,9 +79,9 @@
 
     <div class="info-box">
       <div class="info-content">
-        <strong>Tip:</strong> Historical stock market returns average around 7-10% annually,
-        while bonds typically return 3-5%. Inflation has historically averaged 2-3% in developed economies.
-        Be conservative with your estimates for more realistic projections.
+        <strong>Tip:</strong> Historical stock market returns average around 7-10% annually, while
+        bonds typically return 3-5%. Inflation has historically averaged 2-3% in developed
+        economies. Be conservative with your estimates for more realistic projections.
       </div>
     </div>
   </div>

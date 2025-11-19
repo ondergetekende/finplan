@@ -9,7 +9,7 @@
  * - January 2024 = 1488
  * - November 2025 = 1510
  */
-export type Month = number;
+export type Month = number
 
 /**
  * Convert a Date object to a Month value.
@@ -17,9 +17,9 @@ export type Month = number;
  * @returns Month value (months since January 1900)
  */
 export function dateToMonth(date: Date): Month {
-  const year = date.getFullYear();
-  const month = date.getMonth(); // 0-11
-  return (year - 1900) * 12 + month;
+  const year = date.getFullYear()
+  const month = date.getMonth() // 0-11
+  return (year - 1900) * 12 + month
 }
 
 /**
@@ -28,9 +28,9 @@ export function dateToMonth(date: Date): Month {
  * @returns Date object set to the first day of the month
  */
 export function monthToDate(month: Month): Date {
-  const year = Math.floor(month / 12) + 1900;
-  const monthIndex = month % 12;
-  return new Date(year, monthIndex, 1);
+  const year = Math.floor(month / 12) + 1900
+  const monthIndex = month % 12
+  return new Date(year, monthIndex, 1)
 }
 
 /**
@@ -39,12 +39,12 @@ export function monthToDate(month: Month): Date {
  * @returns Month value, or undefined if the string is invalid
  */
 export function stringToMonth(dateString: string | undefined): Month | undefined {
-  if (!dateString) return undefined;
+  if (!dateString) return undefined
 
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return undefined;
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return undefined
 
-  return dateToMonth(date);
+  return dateToMonth(date)
 }
 
 /**
@@ -53,10 +53,10 @@ export function stringToMonth(dateString: string | undefined): Month | undefined
  * @returns ISO date string (YYYY-MM-DD)
  */
 export function monthToString(month: Month | undefined): string | undefined {
-  if (month === undefined) return undefined;
+  if (month === undefined) return undefined
 
-  const date = monthToDate(month);
-  return date.toISOString().split('T')[0];
+  const date = monthToDate(month)
+  return date.toISOString().split('T')[0]
 }
 
 /**
@@ -64,7 +64,7 @@ export function monthToString(month: Month | undefined): string | undefined {
  * @returns Current Month value
  */
 export function getCurrentMonth(): Month {
-  return dateToMonth(new Date());
+  return dateToMonth(new Date())
 }
 
 /**
@@ -74,7 +74,7 @@ export function getCurrentMonth(): Month {
  * @returns New Month value
  */
 export function addMonths(month: Month, monthsToAdd: number): Month {
-  return month + monthsToAdd;
+  return month + monthsToAdd
 }
 
 /**
@@ -84,7 +84,7 @@ export function addMonths(month: Month, monthsToAdd: number): Month {
  * @returns Number of months between them (month1 - month2)
  */
 export function monthDiff(month1: Month, month2: Month): number {
-  return month1 - month2;
+  return month1 - month2
 }
 
 /**
@@ -93,7 +93,7 @@ export function monthDiff(month1: Month, month2: Month): number {
  * @returns The year (e.g., 2024)
  */
 export function getYear(month: Month): number {
-  return Math.floor(month / 12) + 1900;
+  return Math.floor(month / 12) + 1900
 }
 
 /**
@@ -102,7 +102,7 @@ export function getYear(month: Month): number {
  * @returns The month index (0 = January, 11 = December)
  */
 export function getMonthIndex(month: Month): number {
-  return month % 12;
+  return month % 12
 }
 
 /**
@@ -112,8 +112,8 @@ export function getMonthIndex(month: Month): number {
  * @returns The month name (e.g., "January", "February")
  */
 export function getMonthName(month: Month, locale = 'en-US'): string {
-  const date = monthToDate(month);
-  return date.toLocaleString(locale, { month: 'long' });
+  const date = monthToDate(month)
+  return date.toLocaleString(locale, { month: 'long' })
 }
 
 /**
@@ -123,8 +123,8 @@ export function getMonthName(month: Month, locale = 'en-US'): string {
  * @returns The short month name (e.g., "Jan", "Feb")
  */
 export function getMonthNameShort(month: Month, locale = 'en-US'): string {
-  const date = monthToDate(month);
-  return date.toLocaleString(locale, { month: 'short' });
+  const date = monthToDate(month)
+  return date.toLocaleString(locale, { month: 'short' })
 }
 
 /**
@@ -134,7 +134,7 @@ export function getMonthNameShort(month: Month, locale = 'en-US'): string {
  * @returns Month value
  */
 export function fromYearMonth(year: number, monthIndex: number): Month {
-  return (year - 1900) * 12 + monthIndex;
+  return (year - 1900) * 12 + monthIndex
 }
 
 /**
@@ -143,23 +143,26 @@ export function fromYearMonth(year: number, monthIndex: number): Month {
  * @param format Format string: 'YYYY-MM', 'YYYY-MM-DD', 'full' (e.g., "January 2024"), 'short' (e.g., "Jan 2024")
  * @returns Formatted string
  */
-export function formatMonth(month: Month | undefined, format: 'YYYY-MM' | 'YYYY-MM-DD' | 'full' | 'short' = 'YYYY-MM'): string {
-  if (month === undefined) return '';
+export function formatMonth(
+  month: Month | undefined,
+  format: 'YYYY-MM' | 'YYYY-MM-DD' | 'full' | 'short' = 'YYYY-MM',
+): string {
+  if (month === undefined) return ''
 
-  const year = getYear(month);
-  const monthIndex = getMonthIndex(month);
+  const year = getYear(month)
+  const monthIndex = getMonthIndex(month)
 
   switch (format) {
     case 'YYYY-MM':
-      return `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+      return `${year}-${String(monthIndex + 1).padStart(2, '0')}`
     case 'YYYY-MM-DD':
-      return monthToString(month)!;
+      return monthToString(month)!
     case 'full':
-      return `${getMonthName(month)} ${year}`;
+      return `${getMonthName(month)} ${year}`
     case 'short':
-      return `${getMonthNameShort(month)} ${year}`;
+      return `${getMonthNameShort(month)} ${year}`
     default:
-      return `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+      return `${year}-${String(monthIndex + 1).padStart(2, '0')}`
   }
 }
 
@@ -170,19 +173,19 @@ export function formatMonth(month: Month | undefined, format: 'YYYY-MM' | 'YYYY-
  * @returns Month value, or undefined if parsing fails
  */
 export function parseMonth(str: string | undefined): Month | undefined {
-  if (!str) return undefined;
+  if (!str) return undefined
 
   // Try YYYY-MM or YYYY-MM-DD format
-  const match = str.match(/^(\d{4})-(\d{2})(?:-\d{2})?$/);
+  const match = str.match(/^(\d{4})-(\d{2})(?:-\d{2})?$/)
   if (match && match[1] && match[2]) {
-    const year = parseInt(match[1], 10);
-    const monthIndex = parseInt(match[2], 10) - 1; // Convert to 0-based
+    const year = parseInt(match[1], 10)
+    const monthIndex = parseInt(match[2], 10) - 1 // Convert to 0-based
     if (monthIndex >= 0 && monthIndex < 12) {
-      return fromYearMonth(year, monthIndex);
+      return fromYearMonth(year, monthIndex)
     }
   }
 
-  return undefined;
+  return undefined
 }
 
 /**
@@ -191,7 +194,7 @@ export function parseMonth(str: string | undefined): Month | undefined {
  * @returns True if the value is a valid Month
  */
 export function isValidMonth(value: unknown): value is Month {
-  return typeof value === 'number' && Number.isInteger(value) && value >= 0;
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0
 }
 
 /**

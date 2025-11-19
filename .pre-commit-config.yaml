@@ -1,0 +1,51 @@
+# Pre-commit hooks for MoneyMap
+# See https://pre-commit.com for more information
+
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      - id: check-merge-conflict
+      - id: check-json
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  # Prettier formatting
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        types_or: [javascript, jsx, ts, tsx, vue, json, yaml, markdown]
+        exclude: 'package-lock.json'
+
+  # ESLint
+  - repo: local
+    hooks:
+      - id: eslint
+        name: eslint
+        entry: npm run lint
+        language: system
+        types_or: [javascript, jsx, ts, tsx, vue]
+        pass_filenames: false
+
+      # TypeScript type checking
+      - id: type-check
+        name: vue-tsc type check
+        entry: npm run type-check
+        language: system
+        types_or: [ts, tsx, vue]
+        pass_filenames: false
+
+      # Unit tests
+      - id: test-unit
+        name: vitest unit tests
+        entry: npm run test:unit -- run
+        language: system
+        types_or: [ts, tsx, vue]
+        pass_filenames: false

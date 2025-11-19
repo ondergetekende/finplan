@@ -28,13 +28,7 @@ export {
 
 // Debt models
 import { Debt as DebtClass } from './debt'
-export {
-  Debt,
-  LinearDebt,
-  AnnualizedDebt,
-  InterestOnlyDebt,
-  type DebtPayment,
-} from './debt'
+export { Debt, LinearDebt, AnnualizedDebt, InterestOnlyDebt, type DebtPayment } from './debt'
 
 // Type guard for debt
 export function isDebt(item: unknown): item is DebtClass {

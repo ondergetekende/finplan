@@ -11,7 +11,7 @@ import {
   type TaxBracket,
   type InflationAdjustment,
   getDefaultTaxOption,
-  findTaxOption
+  findTaxOption,
 } from '../config/taxConfig'
 
 // Re-export for use by calculator
@@ -24,20 +24,14 @@ export type { InflationAdjustment }
  * @param inflationAdjustment - Inflation adjustment parameters (optional)
  * @returns The inflation-adjusted amount
  */
-function adjustForInflation(
-  amount: number,
-  inflationAdjustment?: InflationAdjustment
-): number {
+function adjustForInflation(amount: number, inflationAdjustment?: InflationAdjustment): number {
   if (!inflationAdjustment || inflationAdjustment.monthsSinceReference <= 0) {
     return amount
   }
 
   // Calculate cumulative inflation: (1 + rate)^years
   const years = inflationAdjustment.monthsSinceReference / 12
-  const inflationMultiplier = Math.pow(
-    1 + inflationAdjustment.inflationRate / 100,
-    years
-  )
+  const inflationMultiplier = Math.pow(1 + inflationAdjustment.inflationRate / 100, years)
 
   return amount * inflationMultiplier
 }
@@ -53,7 +47,7 @@ function adjustForInflation(
 export function calculateTax(
   amount: number,
   taxOption: TaxOption,
-  inflationAdjustment?: InflationAdjustment
+  inflationAdjustment?: InflationAdjustment,
 ): number {
   // Negative or zero amounts have no tax
   if (amount <= 0) {
@@ -62,10 +56,7 @@ export function calculateTax(
 
   // Handle exemption threshold with inflation adjustment
   if (taxOption.exemptionThreshold !== undefined) {
-    const adjustedThreshold = adjustForInflation(
-      taxOption.exemptionThreshold,
-      inflationAdjustment
-    )
+    const adjustedThreshold = adjustForInflation(taxOption.exemptionThreshold, inflationAdjustment)
     if (amount <= adjustedThreshold) {
       return 0
     }
@@ -98,15 +89,15 @@ export function calculateTax(
 export function calculateProgressiveTax(
   amount: number,
   brackets: TaxBracket[],
-  inflationAdjustment?: InflationAdjustment
+  inflationAdjustment?: InflationAdjustment,
 ): number {
   if (amount <= 0) return 0
   if (brackets.length === 0) return 0
 
   // Adjust bracket thresholds for inflation
-  const adjustedBrackets = brackets.map(bracket => ({
+  const adjustedBrackets = brackets.map((bracket) => ({
     ...bracket,
-    threshold: adjustForInflation(bracket.threshold, inflationAdjustment)
+    threshold: adjustForInflation(bracket.threshold, inflationAdjustment),
   }))
 
   // Ensure brackets are sorted by threshold
@@ -164,7 +155,7 @@ export function calculateProgressiveTax(
 export function resolveTaxOption(
   taxId: string | undefined,
   countryCode: string | undefined,
-  taxType: TaxType
+  taxType: TaxType,
 ): TaxOption | null {
   // No tax ID configured
   if (!taxId) {
@@ -184,9 +175,7 @@ export function resolveTaxOption(
     }
     const defaultOption = getDefaultTaxOption(countryCode, taxType)
     if (!defaultOption) {
-      console.warn(
-        `No default ${taxType} tax option found for country ${countryCode}`
-      )
+      console.warn(`No default ${taxType} tax option found for country ${countryCode}`)
       return null
     }
     return defaultOption
@@ -195,17 +184,13 @@ export function resolveTaxOption(
   // Look up specific tax option
   const taxOption = findTaxOption(taxId, countryCode)
   if (!taxOption) {
-    console.warn(
-      `Tax option not found: ${taxId} for country ${countryCode || 'any'}`
-    )
+    console.warn(`Tax option not found: ${taxId} for country ${countryCode || 'any'}`)
     return null
   }
 
   // Verify the tax option type matches what we're looking for
   if (taxOption.type !== taxType) {
-    console.warn(
-      `Tax option ${taxId} is type ${taxOption.type}, expected ${taxType}`
-    )
+    console.warn(`Tax option ${taxId} is type ${taxOption.type}, expected ${taxType}`)
     return null
   }
 
@@ -226,7 +211,7 @@ export function resolveTaxOption(
 export function calculateMonthlyTax(
   annualAmount: number,
   taxOption: TaxOption,
-  inflationAdjustment?: InflationAdjustment
+  inflationAdjustment?: InflationAdjustment,
 ): number {
   const annualTax = calculateTax(annualAmount, taxOption, inflationAdjustment)
   return annualTax / 12
@@ -247,7 +232,7 @@ export function calculateMonthlyTax(
 export function calculateMonthlyIncomeTax(
   monthlyIncome: number,
   taxOption: TaxOption,
-  inflationAdjustment?: InflationAdjustment
+  inflationAdjustment?: InflationAdjustment,
 ): number {
   // Annualize the monthly income
   const annualIncome = monthlyIncome * 12

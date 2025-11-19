@@ -2,9 +2,9 @@
   <div class="birth-date-step">
     <h3 class="step-title">When were you born?</h3>
     <p class="step-description">
-      Your birth date helps us calculate your current age and project your financial future
-      through different life stages. This allows for age-specific planning, such as retirement
-      projections and milestone planning.
+      Your birth date helps us calculate your current age and project your financial future through
+      different life stages. This allows for age-specific planning, such as retirement projections
+      and milestone planning.
     </p>
 
     <div class="form-section">
@@ -26,8 +26,8 @@
 
     <div class="info-box">
       <div class="info-content">
-        <strong>Privacy note:</strong> Your birth date is stored locally on your device
-        and is never transmitted to any server.
+        <strong>Privacy note:</strong> Your birth date is stored locally on your device and is never
+        transmitted to any server.
       </div>
     </div>
   </div>
@@ -39,7 +39,7 @@ import MonthEdit from '../MonthEdit.vue'
 import type { Month } from '@/types/month'
 import { getCurrentMonth } from '@/types/month'
 
-const props = defineProps<{
+defineProps<{
   birthDate: Month
   currentAge: number | null
 }>()

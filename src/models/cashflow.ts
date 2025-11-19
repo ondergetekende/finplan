@@ -33,7 +33,7 @@ export class CashFlow extends FinancialItem {
     followsInflation: boolean = false,
     isOneTime: boolean = false,
     incomeTaxId?: string,
-    frequency: CashFlowFrequency = 'monthly'
+    frequency: CashFlowFrequency = 'monthly',
   ) {
     super(id, name)
 
@@ -65,7 +65,7 @@ export class CashFlow extends FinancialItem {
         return this.amount
       case 'monthly':
         // Monthly to weekly: multiply by 12 months, divide by 52 weeks
-        return this.amount * 12 / 52
+        return (this.amount * 12) / 52
       case 'annual':
         // Annual to weekly: divide by 52 weeks
         return this.amount / 52
@@ -79,7 +79,7 @@ export class CashFlow extends FinancialItem {
     switch (this.frequency) {
       case 'weekly':
         // Weekly to monthly: multiply by 52 weeks/year, divide by 12 months
-        return this.amount * 52 / 12
+        return (this.amount * 52) / 12
       case 'monthly':
         return this.amount
       case 'annual':
@@ -108,7 +108,20 @@ export class CashFlow extends FinancialItem {
    * Create a copy of this cash flow with updated properties
    */
   with(
-    updates: Partial<Pick<CashFlow, 'name' | 'amount' | 'startDate' | 'endDate' | 'type' | 'followsInflation' | 'isOneTime' | 'incomeTaxId' | 'frequency'>>
+    updates: Partial<
+      Pick<
+        CashFlow,
+        | 'name'
+        | 'amount'
+        | 'startDate'
+        | 'endDate'
+        | 'type'
+        | 'followsInflation'
+        | 'isOneTime'
+        | 'incomeTaxId'
+        | 'frequency'
+      >
+    >,
   ): CashFlow {
     return new CashFlow(
       this.id,
@@ -120,7 +133,7 @@ export class CashFlow extends FinancialItem {
       updates.followsInflation ?? this.followsInflation,
       updates.isOneTime ?? this.isOneTime,
       updates.incomeTaxId !== undefined ? updates.incomeTaxId : this.incomeTaxId,
-      updates.frequency ?? this.frequency
+      updates.frequency ?? this.frequency,
     )
   }
 
@@ -145,7 +158,7 @@ export class CashFlow extends FinancialItem {
   /**
    * Deserialize from JSON
    */
-  static fromJSON(data: any): CashFlow {
+  static fromJSON(data: Record<string, unknown>): CashFlow {
     // Handle startDate - could be Month (number), legacy string, or undefined
     let startDate: Month | undefined
     if (typeof data.startDate === 'number') {
@@ -163,27 +176,27 @@ export class CashFlow extends FinancialItem {
     }
 
     // Handle backward compatibility: old data has 'monthlyAmount', new data has 'amount'
-    let amount = data.amount
-    let frequency = data.frequency ?? 'monthly'
+    let amount = data.amount as number | undefined
+    const frequency = (data.frequency as CashFlow['frequency']) ?? 'monthly'
 
     // If amount is missing but monthlyAmount exists (old format), convert it
     if (amount === undefined && data.monthlyAmount !== undefined) {
       // Old data stored monthlyAmount regardless of frequency
       // We need to keep the amount as-is but store it in the 'amount' field
-      amount = data.monthlyAmount
+      amount = data.monthlyAmount as number
     }
 
     return new CashFlow(
-      data.id || crypto.randomUUID(),
-      data.name || '',
+      (data.id as string) || crypto.randomUUID(),
+      (data.name as string) || '',
       amount || 0,
-      data.type || 'expense',
+      (data.type as 'income' | 'expense') || 'expense',
       startDate,
       endDate,
-      data.followsInflation ?? false,
-      data.isOneTime ?? false,
-      data.incomeTaxId, // Optional, undefined if not present for backward compatibility
-      frequency
+      (data.followsInflation as boolean) ?? false,
+      (data.isOneTime as boolean) ?? false,
+      data.incomeTaxId as string | undefined, // Optional, undefined if not present for backward compatibility
+      frequency,
     )
   }
 

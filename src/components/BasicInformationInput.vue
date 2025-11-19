@@ -73,7 +73,7 @@ import type { Month } from '@/types/month'
 import { getCurrentMonth } from '@/types/month'
 import { TAX_CONFIGS } from '@/config/taxConfig'
 
-const props = defineProps<{
+defineProps<{
   birthDate: Month
   inflationRate: number
   liquidAssetsInterestRate: number

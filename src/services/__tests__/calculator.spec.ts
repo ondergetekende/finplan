@@ -7,20 +7,43 @@ import { stringToMonth } from '@/types/month'
 // Helper to create test profiles using classes
 function createTestProfile(data: {
   birthDate: string
-  capitalAccounts: Array<{ id: string; name: string; amount: number; assetType: 'liquid' | 'fixed'; annualInterestRate?: number; liquidationDate?: string | Month }>
+  capitalAccounts: Array<{
+    id: string
+    name: string
+    amount: number
+    assetType: 'liquid' | 'fixed'
+    annualInterestRate?: number
+    liquidationDate?: string | Month
+  }>
   liquidAssetsInterestRate: number
-  cashFlows: Array<{ id: string; name: string; monthlyAmount: number; type: 'income' | 'expense'; startDate?: string | Month; endDate?: string | Month }>
+  cashFlows: Array<{
+    id: string
+    name: string
+    monthlyAmount: number
+    type: 'income' | 'expense'
+    startDate?: string | Month
+    endDate?: string | Month
+  }>
 }): UserProfile {
-  const accounts = data.capitalAccounts.map(acc => {
+  const accounts = data.capitalAccounts.map((acc) => {
     if (acc.assetType === 'fixed') {
-      const liquidationDate = typeof acc.liquidationDate === 'string' ? stringToMonth(acc.liquidationDate) : acc.liquidationDate
-      return new FixedAsset(acc.id, acc.name, acc.amount, acc.annualInterestRate || 0, liquidationDate)
+      const liquidationDate =
+        typeof acc.liquidationDate === 'string'
+          ? stringToMonth(acc.liquidationDate)
+          : acc.liquidationDate
+      return new FixedAsset(
+        acc.id,
+        acc.name,
+        acc.amount,
+        acc.annualInterestRate || 0,
+        liquidationDate,
+      )
     } else {
       return new LiquidAsset(acc.id, acc.name, acc.amount)
     }
   })
 
-  const flows = data.cashFlows.map(cf => {
+  const flows = data.cashFlows.map((cf) => {
     const startDate = typeof cf.startDate === 'string' ? stringToMonth(cf.startDate) : cf.startDate
     const endDate = typeof cf.endDate === 'string' ? stringToMonth(cf.endDate) : cf.endDate
     return new CashFlow(cf.id, cf.name, cf.monthlyAmount, cf.type, startDate, endDate)
@@ -309,7 +332,13 @@ describe('Financial Calculator', () => {
       capitalAccounts: [{ id: '1', name: 'Savings', amount: 100000, assetType: 'liquid' }],
       liquidAssetsInterestRate: 0,
       cashFlows: [
-        { id: '1', name: 'Rent', monthlyAmount: 1000, endDate: stringToMonth('2030-01-01')!, type: 'expense' },
+        {
+          id: '1',
+          name: 'Rent',
+          monthlyAmount: 1000,
+          endDate: stringToMonth('2030-01-01')!,
+          type: 'expense',
+        },
         // No startDate - should be active immediately
       ],
     })
@@ -672,7 +701,7 @@ describe('Financial Calculator', () => {
         stringToMonth('2025-06-01')!,
         undefined,
         false,
-        true // isOneTime
+        true, // isOneTime
       )
       profile.cashFlows.push(windfall)
 
@@ -707,7 +736,7 @@ describe('Financial Calculator', () => {
         stringToMonth('2025-03-01')!,
         undefined,
         false,
-        true // isOneTime
+        true, // isOneTime
       )
       profile.cashFlows.push(oneTimeExpense)
 
@@ -743,8 +772,8 @@ describe('Financial Calculator', () => {
           stringToMonth('2025-02-01')!,
           undefined,
           false,
-          true
-        )
+          true,
+        ),
       )
       profile.cashFlows.push(
         new CashFlow(
@@ -755,8 +784,8 @@ describe('Financial Calculator', () => {
           stringToMonth('2025-04-01')!,
           undefined,
           false,
-          true
-        )
+          true,
+        ),
       )
       profile.cashFlows.push(
         new CashFlow(
@@ -767,8 +796,8 @@ describe('Financial Calculator', () => {
           stringToMonth('2025-07-01')!,
           undefined,
           false,
-          true
-        )
+          true,
+        ),
       )
 
       const result = calculateProjections(profile)
@@ -815,8 +844,8 @@ describe('Financial Calculator', () => {
           stringToMonth('2025-12-01')!,
           undefined,
           false,
-          true
-        )
+          true,
+        ),
       )
 
       const result = calculateProjections(profile)
@@ -844,7 +873,7 @@ describe('Financial Calculator', () => {
         stringToMonth('2030-06-01')!,
         undefined,
         true, // followsInflation
-        true // isOneTime
+        true, // isOneTime
       )
 
       // Create profile with inflation rate and the future windfall
@@ -854,7 +883,7 @@ describe('Financial Calculator', () => {
         [futureWindfall],
         0, // liquidAssetsInterestRate
         [], // debts
-        3 // inflationRate
+        3, // inflationRate
       )
 
       const result = calculateProjections(profile)
@@ -885,7 +914,7 @@ describe('Financial Calculator', () => {
         stringToMonth('2025-06-01')!,
         stringToMonth('2025-12-01')!, // This endDate should be ignored
         false,
-        true // isOneTime
+        true, // isOneTime
       )
       profile.cashFlows.push(oneTime)
 
@@ -907,7 +936,7 @@ describe('Financial Calculator', () => {
           undefined, // Missing startDate
           undefined,
           false,
-          true // isOneTime
+          true, // isOneTime
         )
       }).toThrow('One-time transactions must have a start date')
     })
@@ -973,8 +1002,7 @@ describe('Financial Calculator', () => {
       expect(firstYear?.startingTotalDebt).toBe(20000)
 
       // Total payments should be 600 * 12 = 7200 (12 months)
-      const totalPayments =
-        firstYear!.totalDebtPrincipalPaid + firstYear!.totalDebtInterestPaid
+      const totalPayments = firstYear!.totalDebtPrincipalPaid + firstYear!.totalDebtInterestPaid
       expect(totalPayments).toBeCloseTo(7200, -2)
 
       // Ending debt should be significantly reduced
@@ -1169,8 +1197,7 @@ describe('Financial Calculator', () => {
 
       // Liquid assets should decrease due to debt payments
       // Principal: ~5500 (500 * 11), Interest: ~250 (declining balance)
-      const expectedDecrease =
-        firstYear!.totalDebtPrincipalPaid + firstYear!.totalDebtInterestPaid
+      const expectedDecrease = firstYear!.totalDebtPrincipalPaid + firstYear!.totalDebtInterestPaid
       expect(firstYear!.startingLiquidAssets - firstYear!.endingLiquidAssets).toBeCloseTo(
         expectedDecrease,
         -2,
@@ -1188,10 +1215,7 @@ describe('Financial Calculator', () => {
 
       const profile = new UserProfile(
         stringToMonth('1995-01-01')!,
-        [
-          new LiquidAsset('1', 'Savings', 50000),
-          new FixedAsset('2', 'House', 200000, 3),
-        ],
+        [new LiquidAsset('1', 'Savings', 50000), new FixedAsset('2', 'House', 200000, 3)],
         [],
         0,
         [debt],
@@ -1343,11 +1367,11 @@ describe('Financial Calculator', () => {
             amount: 300000,
             annualInterestRate: 3,
             assetType: 'fixed',
-            liquidationDate: '2030-06-01' // Liquidate in June 2030
-          }
+            liquidationDate: '2030-06-01', // Liquidate in June 2030
+          },
         ],
         liquidAssetsInterestRate: 5,
-        cashFlows: []
+        cashFlows: [],
       })
 
       const result = calculateProjections(profile)
@@ -1384,11 +1408,11 @@ describe('Financial Calculator', () => {
             amount: 100000,
             annualInterestRate: 6, // 6% annual appreciation
             assetType: 'fixed',
-            liquidationDate: '2025-12-01' // Liquidate in December 2025
-          }
+            liquidationDate: '2025-12-01', // Liquidate in December 2025
+          },
         ],
         liquidAssetsInterestRate: 0,
-        cashFlows: []
+        cashFlows: [],
       })
 
       const result = calculateProjections(profile)
@@ -1414,7 +1438,7 @@ describe('Financial Calculator', () => {
             amount: 300000,
             annualInterestRate: 3,
             assetType: 'fixed',
-            liquidationDate: '2030-01-01'
+            liquidationDate: '2030-01-01',
           },
           {
             id: '3',
@@ -1422,11 +1446,11 @@ describe('Financial Calculator', () => {
             amount: 30000,
             annualInterestRate: -10, // Depreciation
             assetType: 'fixed',
-            liquidationDate: '2027-01-01'
-          }
+            liquidationDate: '2027-01-01',
+          },
         ],
         liquidAssetsInterestRate: 5,
-        cashFlows: []
+        cashFlows: [],
       })
 
       const result = calculateProjections(profile)
@@ -1455,12 +1479,12 @@ describe('Financial Calculator', () => {
             name: 'House',
             amount: 200000,
             annualInterestRate: 3,
-            assetType: 'fixed'
+            assetType: 'fixed',
             // No liquidationDate
-          }
+          },
         ],
         liquidAssetsInterestRate: 5,
-        cashFlows: []
+        cashFlows: [],
       })
 
       const result = calculateProjections(profile)
@@ -1487,11 +1511,11 @@ describe('Financial Calculator', () => {
             amount: 150000,
             annualInterestRate: 4,
             assetType: 'fixed',
-            liquidationDate: '2028-01-01'
-          }
+            liquidationDate: '2028-01-01',
+          },
         ],
         liquidAssetsInterestRate: 0,
-        cashFlows: []
+        cashFlows: [],
       })
 
       const result = calculateProjections(profile)
@@ -1525,11 +1549,11 @@ describe('Financial Calculator', () => {
             amount: 40000,
             annualInterestRate: -15, // Heavy depreciation
             assetType: 'fixed',
-            liquidationDate: '2027-06-01'
-          }
+            liquidationDate: '2027-06-01',
+          },
         ],
         liquidAssetsInterestRate: 0,
-        cashFlows: []
+        cashFlows: [],
       })
 
       const result = calculateProjections(profile)
@@ -1555,11 +1579,11 @@ describe('Financial Calculator', () => {
             amount: 200000,
             annualInterestRate: 5,
             assetType: 'fixed',
-            liquidationDate: '2026-01-01'
-          }
+            liquidationDate: '2026-01-01',
+          },
         ],
         liquidAssetsInterestRate: 3,
-        cashFlows: []
+        cashFlows: [],
       })
 
       const result = calculateProjections(profile)
@@ -1592,7 +1616,7 @@ describe('Financial Calculator', () => {
         undefined,
         false,
         false,
-        'us-federal-single' // US federal income tax
+        'us-income-single', // US federal income tax
       )
 
       const liquidAsset = new LiquidAsset('1', 'Checking', 10000)
@@ -1605,7 +1629,7 @@ describe('Financial Calculator', () => {
         0, // No interest on liquid assets
         [],
         0, // No inflation
-        'US' // United States
+        'US', // United States
       )
 
       const result = calculateProjections(profile)
@@ -1635,21 +1659,13 @@ describe('Financial Calculator', () => {
         undefined,
         false,
         false,
-        'after-tax'
+        'after-tax',
       )
 
       const liquidAsset = new LiquidAsset('1', 'Checking', 10000)
 
       const birthMonth = stringToMonth('1990-01-01')!
-      const profile = new UserProfile(
-        birthMonth,
-        [liquidAsset],
-        [incomeAfterTax],
-        0,
-        [],
-        0,
-        'US'
-      )
+      const profile = new UserProfile(birthMonth, [liquidAsset], [incomeAfterTax], 0, [], 0, 'US')
 
       const result = calculateProjections(profile)
       const firstMonth = result.monthlyProjections[0]
@@ -1668,7 +1684,7 @@ describe('Financial Calculator', () => {
         'Investment Account',
         1000000, // $1M to generate enough interest to be taxable
         undefined, // No wealth tax
-        'us-ltcg-single' // US long-term capital gains tax
+        'us-capital-gains-long', // US long-term capital gains tax
       )
 
       const birthMonth = stringToMonth('1990-01-01')!
@@ -1679,7 +1695,7 @@ describe('Financial Calculator', () => {
         10, // 10% interest rate -> $100k annual interest
         [],
         0,
-        'US'
+        'US',
       )
 
       const result = calculateProjections(profile)
@@ -1705,8 +1721,8 @@ describe('Financial Calculator', () => {
         '1',
         'Savings',
         100000,
-        'nl-box3-wealth', // Dutch Box 3 wealth tax
-        undefined
+        'nl-wealth', // Dutch Box 3 wealth tax
+        undefined,
       )
 
       const birthMonth = stringToMonth('1990-01-01')!
@@ -1717,7 +1733,7 @@ describe('Financial Calculator', () => {
         0, // No interest
         [],
         0,
-        'NL' // Netherlands
+        'NL', // Netherlands
       )
 
       const result = calculateProjections(profile)
@@ -1738,7 +1754,7 @@ describe('Financial Calculator', () => {
         3, // 3% appreciation
         undefined, // No liquidation date
         undefined, // No wealth tax
-        'gb-cgt-higher' // UK capital gains tax
+        'gb-capital-gains-higher', // UK capital gains tax
       )
 
       const liquidAsset = new LiquidAsset('2', 'Checking', 50000)
@@ -1751,7 +1767,7 @@ describe('Financial Calculator', () => {
         0,
         [],
         0,
-        'GB' // United Kingdom
+        'GB', // United Kingdom
       )
 
       const result = calculateProjections(profile)
@@ -1775,7 +1791,7 @@ describe('Financial Calculator', () => {
         undefined,
         false,
         false,
-        'nl-box1' // Dutch Box 1 income tax
+        'nl-income-box1', // Dutch Box 1 income tax
       )
 
       // Liquid asset with both taxes
@@ -1783,8 +1799,8 @@ describe('Financial Calculator', () => {
         '1',
         'Investments',
         200000,
-        'nl-box3-wealth', // Wealth tax
-        'nl-no-cgt' // No capital gains (NL)
+        'nl-wealth', // Wealth tax
+        'nl-capital-gains', // No capital gains (NL)
       )
 
       // Fixed asset with appreciation
@@ -1794,8 +1810,8 @@ describe('Financial Calculator', () => {
         400000,
         2, // 2% appreciation
         undefined,
-        'nl-box3-wealth', // Wealth tax on house
-        'nl-no-cgt' // No capital gains
+        'nl-wealth', // Wealth tax on house
+        'nl-no-cgt', // No capital gains
       )
 
       const birthMonth = stringToMonth('1990-01-01')!
@@ -1806,7 +1822,7 @@ describe('Financial Calculator', () => {
         4, // 4% interest on liquid assets
         [],
         0,
-        'NL'
+        'NL',
       )
 
       const result = calculateProjections(profile)
@@ -1821,23 +1837,21 @@ describe('Financial Calculator', () => {
 
       // Total tax should be sum of all taxes
       expect(firstMonth!.totalTaxPaid).toBeCloseTo(
-        firstMonth!.incomeTaxPaid +
-        firstMonth!.wealthTaxPaid +
-        firstMonth!.capitalGainsTaxPaid,
-        2
+        firstMonth!.incomeTaxPaid + firstMonth!.wealthTaxPaid + firstMonth!.capitalGainsTaxPaid,
+        2,
       )
 
       // Annual summary should aggregate taxes correctly
-      const year2025 = result.annualSummaries.find(s => s.year === 2025)
+      const year2025 = result.annualSummaries.find((s) => s.year === 2025)
       expect(year2025).toBeDefined()
       expect(year2025!.totalIncomeTaxPaid).toBeGreaterThan(0)
       expect(year2025!.totalWealthTaxPaid).toBeGreaterThan(0)
       expect(year2025!.totalCapitalGainsTaxPaid).toBe(0)
       expect(year2025!.totalTaxPaid).toBeCloseTo(
         year2025!.totalIncomeTaxPaid +
-        year2025!.totalWealthTaxPaid +
-        year2025!.totalCapitalGainsTaxPaid,
-        2
+          year2025!.totalWealthTaxPaid +
+          year2025!.totalCapitalGainsTaxPaid,
+        2,
       )
     })
 
@@ -1850,7 +1864,7 @@ describe('Financial Calculator', () => {
         birthMonth,
         [liquidAsset],
         [income],
-        5
+        5,
         // No taxCountry
       )
 
@@ -1878,7 +1892,7 @@ describe('Financial Calculator', () => {
         undefined,
         false,
         false,
-        'default' // Use default tax for country
+        'default', // Use default tax for country
       )
 
       const liquidAsset = new LiquidAsset(
@@ -1886,7 +1900,7 @@ describe('Financial Calculator', () => {
         'Checking',
         100000, // Above NL Box 3 exemption threshold (57,000)
         'default', // Use default wealth tax
-        'default' // Use default capital gains tax
+        'default', // Use default capital gains tax
       )
 
       const birthMonth = stringToMonth('1990-01-01')!
@@ -1897,7 +1911,7 @@ describe('Financial Calculator', () => {
         5,
         [],
         0,
-        'NL' // Netherlands
+        'NL', // Netherlands
       )
 
       const result = calculateProjections(profile)
