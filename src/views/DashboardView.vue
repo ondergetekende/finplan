@@ -149,7 +149,7 @@
   .dashboard {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 1rem;
   }
 
   .dashboard-header {
@@ -164,18 +164,18 @@
   }
 
   .birth-date-section {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
   }
 
   .items-section {
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
   }
 
   .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
   }
 
   .section-header h2 {
@@ -193,11 +193,12 @@
 
   .empty-state {
     text-align: center;
-    padding: 3rem 1rem;
-    background: #f9fafb;
-    border: 2px dashed #d1d5db;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
+    padding: 2rem 1rem;
+    background: transparent;
+    border: none;
+    border-left: 3px solid #d1d5db;
+    border-radius: 0;
+    margin-bottom: 1rem;
   }
 
   .empty-state p {
@@ -214,11 +215,11 @@
   }
 
   .projections-section {
-    margin-top: 3rem;
+    margin-top: 2rem;
   }
 
   .projections-header {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
   }
 
   .projections-section h2 {
@@ -229,10 +230,11 @@
   }
 
   .inflation-toggle {
-    padding: 1rem;
-    background: #f9fafb;
-    border-radius: 8px;
-    border: 1px solid #e5e7eb;
+    padding: 0.75rem;
+    background: transparent;
+    border-radius: 0;
+    border: none;
+    border-left: 3px solid #e5e7eb;
   }
 
   .toggle-label {
@@ -265,22 +267,22 @@
   .projections-content {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.5rem;
   }
 
   .chart-container,
   .table-container {
-    background: white;
-    border-radius: 8px;
-    padding: 1.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
   }
 
   .no-projections {
     text-align: center;
-    padding: 2rem;
-    background: #f9fafb;
-    border-radius: 8px;
+    padding: 1.5rem 1rem;
+    background: transparent;
+    border-left: 3px solid #d1d5db;
+    border-radius: 0;
   }
 
   .no-projections p {
@@ -291,9 +293,8 @@
   /* Tablet and below */
   @media (max-width: 768px) {
     .dashboard {
-      padding: 1rem;
-      margin: 0 -1rem;
-      /* Full width bleed */
+      padding: 0.75rem;
+      margin: 0;
     }
 
     .dashboard-header h1 {
@@ -321,7 +322,7 @@
 
     .chart-container,
     .table-container {
-      padding: 1rem;
+      padding: 0;
     }
   }
 
@@ -352,11 +353,15 @@
     }
 
     .empty-state {
-      padding: 2rem 1rem;
+      padding: 1.5rem 0.75rem;
     }
 
     .empty-state p {
       font-size: 0.9375rem;
+    }
+
+    .no-projections {
+      padding: 1.5rem 0.75rem;
     }
   }
 </style>
