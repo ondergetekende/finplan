@@ -310,7 +310,7 @@ function handleDelete() {
       </div>
 
       <div class="form-group">
-        <label for="amount">Principal Amount (€) *</label>
+        <label for="amount">Loan Amount (€) *</label>
         <input
           id="amount"
           v-model.number="amount"
@@ -348,19 +348,31 @@ function handleDelete() {
         <div class="radio-group">
           <label class="radio-label">
             <input type="radio" v-model="repaymentType" value="annuity" />
-            Constant payment (annuity)
+            <div class="radio-content">
+              <span class="radio-title">Constant payment</span>
+              <span class="radio-description">Same monthly payment throughout</span>
+            </div>
           </label>
           <label class="radio-label">
             <input type="radio" v-model="repaymentType" value="linear" />
-            Constant principal (linear)
+            <div class="radio-content">
+              <span class="radio-title">Constant principal</span>
+              <span class="radio-description">Decreasing payments over time</span>
+            </div>
           </label>
           <label class="radio-label">
             <input type="radio" v-model="repaymentType" value="balloon" />
-            Balloon payment
+            <div class="radio-content">
+              <span class="radio-title">Balloon payment</span>
+              <span class="radio-description">Pay interest only, repay loan at end</span>
+            </div>
           </label>
           <label class="radio-label">
             <input type="radio" v-model="repaymentType" value="perpetual" />
-            Perpetual (interest only)
+            <div class="radio-content">
+              <span class="radio-title">Perpetual</span>
+              <span class="radio-description">Interest only, never repay principal</span>
+            </div>
           </label>
         </div>
       </div>
@@ -578,8 +590,8 @@ function handleDelete() {
 
 .radio-label {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  align-items: flex-start;
+  gap: 0.75rem;
   font-weight: 500;
   cursor: pointer;
   padding: 0.75rem;
@@ -597,11 +609,33 @@ function handleDelete() {
   width: 18px;
   height: 18px;
   cursor: pointer;
+  margin-top: 0.125rem;
+  flex-shrink: 0;
 }
 
 .radio-label:has(input[type='radio']:checked) {
   border-color: #42b983;
   background: #ecfdf5;
+}
+
+.radio-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.radio-title {
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.9375rem;
+}
+
+.radio-description {
+  font-weight: 400;
+  color: #6b7280;
+  font-size: 0.8125rem;
+  line-height: 1.3;
 }
 
 .calculated-values {
