@@ -27,15 +27,6 @@
       "isDefault": false,
       "rate": 33,
       "notes": "2024 rate for income from substantial business interest (5% or more shares in a company)"
-    },
-    {
-      "id": "nl-income-box3",
-      "name": "Box 3 Income Tax (Savings and Investments)",
-      "type": "income",
-      "isDefault": false,
-      "rate": 36,
-      "exemptionThreshold": 57000,
-      "notes": "2024 rate. Applies to net wealth from savings and investments. Tax-free allowance of €57,000 per person (€114,000 for fiscal partners)"
     }
   ],
   "wealthTaxes": [
@@ -44,8 +35,8 @@
       "name": "Box 3 Wealth Tax",
       "type": "wealth",
       "isDefault": true,
-      "rate": 36,
-      "exemptionThreshold": 57000,
+      "rate": 5.88,
+      "exemptionThreshold": 57684,
       "notes": "2024 rate. Integrated with Box 3 income tax system. Calculated based on deemed returns on assets."
     }
   ],
