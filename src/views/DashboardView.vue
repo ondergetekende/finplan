@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted } from 'vue'
+import { useLocalStorage } from '@vueuse/core'
 import { usePlannerStore } from '@/stores/planner'
 import BasicInfoSummary from '@/components/BasicInfoSummary.vue'
 import BasicInfoWizard from '@/components/BasicInfoWizard.vue'
@@ -11,8 +12,8 @@ import type { Month } from '@/types/month'
 
 const store = usePlannerStore()
 
-// Toggle for showing inflation-adjusted values
-const showInflationAdjusted = ref(false)
+// Toggle for showing inflation-adjusted values (persisted in localStorage)
+const showInflationAdjusted = useLocalStorage('showInflationAdjusted', true)
 
 // Auto-open wizard on first visit
 onMounted(() => {
