@@ -1,0 +1,264 @@
+// ============================================================================
+// MoneyMap Style System - Mixins
+// ============================================================================
+
+// Import variables for use in mixins
+@use 'variables' as *;
+
+// ----------------------------------------------------------------------------
+// Responsive Breakpoint Mixins
+// Based on UI guidelines: ≤480px (extra compact), ≤768px (mobile), >768px (desktop)
+// ----------------------------------------------------------------------------
+
+/// Mobile small breakpoint (≤480px)
+/// Usage: @include mobile-small { ... }
+@mixin mobile-small {
+  @media (max-width: $breakpoint-mobile-small) {
+    @content;
+  }
+}
+
+/// Mobile breakpoint (≤768px)
+/// Usage: @include mobile { ... }
+@mixin mobile {
+  @media (max-width: $breakpoint-mobile) {
+    @content;
+  }
+}
+
+/// Desktop breakpoint (>768px)
+/// Usage: @include desktop { ... }
+@mixin desktop {
+  @media (min-width: #{$breakpoint-mobile + 1px}) {
+    @content;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Focus Ring Mixin
+// Consistent focus styling for interactive elements
+// ----------------------------------------------------------------------------
+
+/// Apply consistent focus ring for accessibility
+/// Usage: @include focus-ring;
+@mixin focus-ring {
+  outline: none;
+  border-color: $primary;
+  box-shadow: $focus-ring;
+}
+
+// ----------------------------------------------------------------------------
+// Card Mixins
+// Common card/container patterns
+// ----------------------------------------------------------------------------
+
+/// White card with border and shadow
+/// Usage: @include card-container;
+@mixin card-container {
+  background: $bg-card;
+  border: 1px solid $border-light;
+  border-radius: $radius-lg;
+  padding: $spacing-3xl;
+
+  @include mobile {
+    padding: $spacing-2xl;
+  }
+
+  @include mobile-small {
+    padding: $spacing-xl;
+  }
+}
+
+/// Card with hover effect (for interactive cards like list items)
+/// Usage: @include card-hover;
+@mixin card-hover {
+  transition: $transition-base;
+
+  &:hover {
+    box-shadow: $shadow-md;
+    transform: translateY(-1px);
+  }
+}
+
+/// Transparent container with left border (used for empty states, toggles)
+/// Usage: @include bordered-section;
+@mixin bordered-section {
+  background: transparent;
+  border: none;
+  border-left: 3px solid $border-light;
+  border-radius: 0;
+  padding: $spacing-base;
+}
+
+// ----------------------------------------------------------------------------
+// Button Mixins
+// ----------------------------------------------------------------------------
+
+/// Base button styles (shared by all button variants)
+/// Usage: @include button-base;
+@mixin button-base {
+  padding: $spacing-md $spacing-xl;
+  border: none;
+  border-radius: $radius-md;
+  font-size: $font-base;
+  font-weight: $font-semibold;
+  cursor: pointer;
+  transition: $transition-base;
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  @include mobile {
+    padding: $spacing-base $spacing-lg;
+    min-height: $touch-target-min;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Typography Mixins
+// ----------------------------------------------------------------------------
+
+/// Truncate text with ellipsis
+/// Usage: @include truncate-text;
+@mixin truncate-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/// Multi-line truncate (requires number of lines)
+/// Usage: @include truncate-multiline(3);
+@mixin truncate-multiline($lines: 2) {
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// ----------------------------------------------------------------------------
+// Layout Mixins
+// ----------------------------------------------------------------------------
+
+/// Flex center alignment
+/// Usage: @include flex-center;
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/// Flex with gap (common pattern)
+/// Usage: @include flex-gap($spacing-md);
+@mixin flex-gap($gap: $spacing-md) {
+  display: flex;
+  gap: $gap;
+}
+
+/// Container with max-width and centered
+/// Usage: @include container;
+@mixin container($max-width: $container-max-width) {
+  max-width: $max-width;
+  margin: 0 auto;
+  padding: 0 $spacing-lg;
+
+  @include mobile {
+    padding: 0 $spacing-base;
+  }
+
+  @include mobile-small {
+    padding: 0 $spacing-base;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Touch Target Mixin
+// Ensures minimum touch target size for mobile accessibility
+// ----------------------------------------------------------------------------
+
+/// Ensure minimum touch target size
+/// Usage: @include touch-target;
+@mixin touch-target {
+  min-height: $touch-target-min;
+  min-width: $touch-target-min;
+}
+
+// ----------------------------------------------------------------------------
+// Smooth Transition Mixin
+// ----------------------------------------------------------------------------
+
+/// Apply smooth transition to specific properties
+/// Usage: @include smooth-transition(background-color, color);
+@mixin smooth-transition($properties...) {
+  transition-property: $properties;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
+}
+
+// ----------------------------------------------------------------------------
+// Form Element Mixins
+// ----------------------------------------------------------------------------
+
+/// Standard input field styling
+/// Usage: @include input-field;
+@mixin input-field {
+  width: 100%;
+  padding: $spacing-md;
+  border: 1px solid $border-medium;
+  border-radius: $radius-md;
+  font-size: $font-base-lg;
+  transition: $transition-base;
+
+  &:focus {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    background: $bg-alt;
+    cursor: not-allowed;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Scrollbar Styling
+// ----------------------------------------------------------------------------
+
+/// Custom scrollbar (for tables, containers)
+/// Usage: @include custom-scrollbar;
+@mixin custom-scrollbar {
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $bg-alt;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $border-medium;
+    border-radius: $radius-base;
+
+    &:hover {
+      background: $border-dark;
+    }
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Visually Hidden (Accessibility)
+// ----------------------------------------------------------------------------
+
+/// Visually hide element but keep it accessible to screen readers
+/// Usage: @include visually-hidden;
+@mixin visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { usePlannerStore } from '@/stores/planner'
 import BasicInfoSummary from '@/components/BasicInfoSummary.vue'
 import InlineOnboarding from '@/components/InlineOnboarding.vue'
@@ -17,6 +17,26 @@ const showInflationAdjusted = ref(false)
 
 // Toggle for showing edit form
 const showEditForm = ref(false)
+
+// Auto-open wizard on first visit
+onMounted(() => {
+  // Check for skipOnboarding URL parameter (only in development)
+  const urlParams = new URLSearchParams(window.location.search)
+  const skipOnboarding = urlParams.get('skipOnboarding') === 'true'
+
+  // Only allow skipOnboarding in development/debug mode
+  const isDevelopment = import.meta.env.DEV
+
+  if (skipOnboarding && isDevelopment) {
+    // Skip the wizard - mark as completed without opening
+    if (!store.wizardCompleted) {
+      store.completeWizard()
+    }
+    return
+  }
+
+  // Wizard opens automatically via v-if in template
+})
 
 function handleOnboardingComplete(data: { birthDate: Month; taxCountry?: string }) {
   store.saveBasicInfo({
@@ -135,227 +155,22 @@ function handleCancelEdit() {
   </div>
 </template>
 
-<style scoped>
-.dashboard {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-}
+<style scoped lang="scss">
+// Most styles now come from _layout.scss - only component-specific overrides here
 
-.dashboard-header {
-  margin-bottom: 2rem;
-}
-
-.dashboard-header h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #111827;
-  margin: 0;
-}
-
-.onboarding-section {
-  margin-bottom: 1.5rem;
-}
-
-.birth-date-section {
-  margin-bottom: 1.5rem;
-}
-
-.items-section {
-  margin-bottom: 2rem;
-}
-
+// Section header responsive adjustment
 .section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.section-header h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
-}
-
-.items-count {
-  font-size: 0.875rem;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 2rem 1rem;
-  background: transparent;
-  border: none;
-  border-left: 3px solid #d1d5db;
-  border-radius: 0;
-  margin-bottom: 1rem;
-}
-
-.empty-state p {
-  color: #6b7280;
-  font-size: 1rem;
-  margin: 0;
-}
-
-.items-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-}
-
-.projections-section {
-  margin-top: 2rem;
-}
-
-.projections-header {
-  margin-bottom: 1rem;
-}
-
-.projections-section h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 1rem;
-}
-
-.inflation-toggle {
-  padding: 0.75rem;
-  background: transparent;
-  border-radius: 0;
-  border: none;
-  border-left: 3px solid #e5e7eb;
-}
-
-.toggle-label {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  cursor: pointer;
-  font-weight: 500;
-  color: #111827;
-  font-size: 0.9375rem;
-}
-
-.toggle-checkbox {
-  width: 1.125rem;
-  height: 1.125rem;
-  cursor: pointer;
-  margin: 0;
-}
-
-.toggle-label span {
-  user-select: none;
-}
-
-.toggle-hint {
-  margin: 0.5rem 0 0 2rem;
-  font-size: 0.8125rem;
-  color: #6b7280;
-}
-
-.projections-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.chart-container,
-.table-container {
-  background: transparent;
-  border-radius: 0;
-  padding: 0;
-}
-
-.no-projections {
-  text-align: center;
-  padding: 1.5rem 1rem;
-  background: transparent;
-  border-left: 3px solid #d1d5db;
-  border-radius: 0;
-}
-
-.no-projections p {
-  color: #6b7280;
-  margin: 0;
-}
-
-/* Tablet and below */
-@media (max-width: 768px) {
-  .dashboard {
-    padding: 0.75rem;
-    margin: 0;
-  }
-
-  .dashboard-header h1 {
-    font-size: 1.5rem;
-  }
-
-  .section-header {
+  @include mobile {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  .section-header h2 {
-    font-size: 1.25rem;
-  }
-
-  .items-list {
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 0.5rem;
-  }
-
-  .projections-section h2 {
-    font-size: 1.25rem;
-  }
-
-  .chart-container,
-  .table-container {
-    padding: 0;
+    gap: $spacing-sm;
   }
 }
 
-/* Small mobile */
-@media (max-width: 480px) {
-  .dashboard {
-    padding: 0.75rem;
-  }
-
-  .dashboard-header {
-    margin-bottom: 1.5rem;
-  }
-
-  .dashboard-header h1 {
-    font-size: 1.375rem;
-  }
-
-  .section-header h2 {
-    font-size: 1.125rem;
-  }
-
-  .items-list {
-    grid-template-columns: 1fr;
-  }
-
-  .projections-section h2 {
-    font-size: 1.125rem;
-  }
-
-  .empty-state {
-    padding: 1.5rem 0.75rem;
-  }
-
-  .empty-state p {
-    font-size: 0.9375rem;
-  }
-
-  .no-projections {
-    padding: 1.5rem 0.75rem;
+// Dashboard header responsive adjustment
+.dashboard-header {
+  @include mobile-small {
+    margin-bottom: $spacing-2xl;
   }
 }
 </style>

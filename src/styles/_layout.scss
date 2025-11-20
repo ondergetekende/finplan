@@ -1,0 +1,414 @@
+// ============================================================================
+// MoneyMap Style System - Layout
+// ============================================================================
+
+// Import variables and mixins for use in layout styles
+@use 'variables' as *;
+@use 'mixins' as *;
+
+// ----------------------------------------------------------------------------
+// Containers
+// ----------------------------------------------------------------------------
+
+.container {
+  @include container($container-max-width);
+}
+
+.dashboard {
+  max-width: $container-max-width;
+  margin: 0 auto;
+  padding: $spacing-lg;
+
+  @include mobile {
+    padding: $spacing-base;
+    margin: 0;
+  }
+
+  @include mobile-small {
+    padding: $spacing-base;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// View Headers (Edit Views)
+// ----------------------------------------------------------------------------
+
+.view-header {
+  margin-bottom: $spacing-3xl;
+
+  h1 {
+    font-size: $font-2xl;
+    font-weight: $font-bold;
+    color: $text-primary;
+    margin: 0;
+  }
+
+  @include mobile {
+    h1 {
+      font-size: $font-xl-2;
+    }
+  }
+
+  @include mobile-small {
+    h1 {
+      font-size: $font-xl;
+    }
+  }
+}
+
+// Edit view containers
+.edit-debt-view,
+.edit-asset-view,
+.edit-cashflow-view {
+  max-width: $form-max-width;
+  margin: 0 auto;
+  padding: $spacing-3xl;
+
+  @include mobile {
+    padding: $spacing-lg;
+  }
+
+  @include mobile-small {
+    padding: $spacing-base;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Section Headers
+// Used in dashboard and other views
+// ----------------------------------------------------------------------------
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+
+  h2 {
+    font-size: $font-xl-2;
+    font-weight: $font-semibold;
+    color: $text-secondary;
+    margin: 0;
+  }
+
+  @include mobile {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $spacing-sm;
+
+    h2 {
+      font-size: $font-lg;
+    }
+  }
+
+  @include mobile-small {
+    h2 {
+      font-size: $font-md;
+    }
+  }
+}
+
+.items-count {
+  font-size: $font-base-sm;
+  color: $text-muted;
+  font-weight: $font-medium;
+}
+
+// ----------------------------------------------------------------------------
+// Dashboard Sections
+// ----------------------------------------------------------------------------
+
+.dashboard-header {
+  margin-bottom: $spacing-3xl;
+
+  h1 {
+    font-size: $font-3xl;
+    font-weight: $font-bold;
+    color: $text-primary;
+    margin: 0;
+  }
+
+  @include mobile {
+    h1 {
+      font-size: $font-xl-2;
+    }
+  }
+
+  @include mobile-small {
+    margin-bottom: $spacing-2xl;
+
+    h1 {
+      font-size: $font-xl;
+    }
+  }
+}
+
+.onboarding-section,
+.birth-date-section {
+  margin-bottom: $spacing-2xl;
+}
+
+.items-section {
+  margin-bottom: $spacing-3xl;
+}
+
+.projections-section {
+  margin-top: $spacing-3xl;
+
+  h2 {
+    font-size: $font-xl-2;
+    font-weight: $font-semibold;
+    color: $text-secondary;
+    margin-bottom: $spacing-lg;
+  }
+
+  @include mobile {
+    h2 {
+      font-size: $font-lg;
+    }
+  }
+
+  @include mobile-small {
+    h2 {
+      font-size: $font-md;
+    }
+  }
+}
+
+.projections-header {
+  margin-bottom: $spacing-lg;
+}
+
+.projections-content {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-2xl;
+}
+
+// ----------------------------------------------------------------------------
+// Items List (Grid)
+// Grid layout for financial items on dashboard
+// ----------------------------------------------------------------------------
+
+.items-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: $spacing-base;
+  margin-bottom: $spacing-2xl;
+
+  @include mobile {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: $spacing-sm;
+  }
+
+  @include mobile-small {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Empty States
+// Used when no data is present
+// ----------------------------------------------------------------------------
+
+.empty-state {
+  text-align: center;
+  padding: $spacing-3xl $spacing-lg;
+  background: transparent;
+  border: none;
+  border-left: 3px solid $border-medium;
+  border-radius: 0;
+  margin-bottom: $spacing-lg;
+
+  p {
+    color: $text-muted;
+    font-size: $font-base-lg;
+    margin: 0;
+  }
+
+  @include mobile-small {
+    padding: $spacing-2xl $spacing-base;
+
+    p {
+      font-size: $font-base;
+    }
+  }
+}
+
+.no-projections {
+  text-align: center;
+  padding: $spacing-2xl $spacing-lg;
+  background: transparent;
+  border-left: 3px solid $border-medium;
+  border-radius: 0;
+
+  p {
+    color: $text-muted;
+    margin: 0;
+  }
+
+  @include mobile-small {
+    padding: $spacing-2xl $spacing-base;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Cards and Containers
+// ----------------------------------------------------------------------------
+
+.card,
+.section-card {
+  @include card-container;
+}
+
+// List item card (with hover effect)
+.list-item {
+  background: $bg-card;
+  border: 1px solid $border-light;
+  border-left: 4px solid; // Color set via inline styles
+  border-radius: $radius-md;
+  padding: $spacing-base;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  @include card-hover;
+
+  @include mobile {
+    padding: $spacing-base;
+    margin-bottom: $spacing-sm;
+  }
+
+  @include mobile-small {
+    padding: $spacing-md;
+  }
+}
+
+// Chart and table containers
+.chart-container,
+.table-container {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+
+  @include mobile {
+    padding: 0;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Inflation Toggle (Dashboard)
+// ----------------------------------------------------------------------------
+
+.inflation-toggle {
+  padding: $spacing-base;
+  background: transparent;
+  border-radius: 0;
+  border: none;
+  border-left: 3px solid $border-light;
+}
+
+// ----------------------------------------------------------------------------
+// List Item Components
+// ----------------------------------------------------------------------------
+
+.item-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-sm;
+}
+
+.item-name {
+  font-weight: $font-semibold;
+  font-size: $font-base;
+  color: $text-secondary;
+  flex: 1;
+  @include truncate-text;
+}
+
+.item-badge {
+  padding: 0.125rem $spacing-sm;
+  border-radius: $radius-sm;
+  font-size: $font-xs;
+  font-weight: $font-medium;
+  flex-shrink: 0;
+}
+
+.item-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.item-amount {
+  font-size: $font-base-lg;
+  font-weight: $font-bold;
+  color: $text-primary;
+  @include truncate-text;
+  cursor: pointer;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-base;
+  transition: $transition-base;
+
+  &:hover {
+    background-color: $bg-alt;
+  }
+
+  @include mobile {
+    font-size: $font-base-lg;
+  }
+
+  @include mobile-small {
+    font-size: $font-base;
+  }
+}
+
+.item-amount-input {
+  font-size: $font-base-lg;
+  font-weight: $font-bold;
+  color: $text-primary;
+  border: 2px solid #3b82f6;
+  border-radius: $radius-base;
+  padding: $spacing-xs $spacing-sm;
+  background: $bg-card;
+  outline: none;
+  min-width: 120px;
+  flex: 1;
+
+  @include mobile {
+    font-size: $font-base-lg;
+  }
+
+  @include mobile-small {
+    font-size: $font-base;
+  }
+}
+
+.edit-button {
+  padding: $spacing-xs $spacing-md;
+  background: $bg-card;
+  border: 1px solid $border-medium;
+  border-radius: $radius-base;
+  color: $text-tertiary;
+  font-size: $font-sm;
+  font-weight: $font-medium;
+  cursor: pointer;
+  transition: $transition-base;
+  flex-shrink: 0;
+
+  &:hover {
+    background: $bg-alt-3;
+    border-color: $border-dark;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  @include mobile {
+    padding: $spacing-sm $spacing-lg;
+    min-height: $touch-target-min;
+  }
+}
