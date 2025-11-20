@@ -281,180 +281,38 @@ function handleDelete() {
   </div>
 </template>
 
-<style scoped>
-.edit-asset-view {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 2rem;
-}
+<style scoped lang="scss">
+// Component-specific styles only - shared styles come from _buttons.scss, _forms.scss, _layout.scss
 
 .view-header {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.back-button {
-  background: none;
-  border: none;
-  color: #42b983;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  flex-shrink: 0;
-}
-
-.back-button:hover {
-  text-decoration: underline;
+  gap: $spacing-lg;
+  margin-bottom: $spacing-3xl;
 }
 
 .page-title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #111827;
+  font-size: $font-2xl;
+  font-weight: $font-bold;
+  color: $text-primary;
   margin: 0;
-}
 
-.edit-form {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 2rem;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group:last-of-type {
-  margin-bottom: 2rem;
-}
-
-label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: #374151;
-  font-size: 0.9375rem;
-}
-
-input[type='text'],
-input[type='number'],
-select {
-  width: 100%;
-  padding: 0.625rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-}
-
-input:focus,
-select:focus {
-  outline: none;
-  border-color: #42b983;
-  box-shadow: 0 0 0 3px rgba(66, 185, 131, 0.1);
-}
-
-select:disabled {
-  background: #f3f4f6;
-  cursor: not-allowed;
-}
-
-.help-text {
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-
-.form-actions {
-  display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
-}
-
-.button {
-  padding: 0.625rem 1.25rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.button-primary {
-  background: #42b983;
-  color: white;
-}
-
-.button-primary:hover {
-  background: #3aa876;
-}
-
-.button-secondary {
-  background: #f3f4f6;
-  color: #374151;
-}
-
-.button-secondary:hover {
-  background: #e5e7eb;
-}
-
-.button-danger {
-  background: #ef4444;
-  color: white;
-}
-
-.button-danger:hover {
-  background: #dc2626;
-}
-
-.button:active {
-  transform: scale(0.98);
-}
-
-/* Mobile optimizations */
-@media (max-width: 768px) {
-  .edit-asset-view {
-    padding: 1rem;
+  @include mobile {
+    font-size: $font-xl-2;
   }
 
-  .page-title {
-    font-size: 1.5rem;
-  }
-
-  .edit-form {
-    padding: 1.5rem;
-  }
-
-  .form-actions {
-    flex-direction: column-reverse;
-  }
-
-  .button {
-    width: 100%;
-    padding: 0.875rem;
-    min-height: 44px; /* Touch target */
+  @include mobile-small {
+    font-size: $font-xl;
   }
 }
 
-@media (max-width: 480px) {
-  .edit-asset-view {
-    padding: 0.75rem;
+.edit-asset-view {
+  @include mobile {
+    padding: $spacing-lg;
   }
 
-  .page-title {
-    font-size: 1.375rem;
-  }
-
-  .edit-form {
-    padding: 1.25rem;
+  @include mobile-small {
+    padding: $spacing-base;
   }
 }
 </style>

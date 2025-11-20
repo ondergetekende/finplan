@@ -1,0 +1,165 @@
+// ============================================================================
+// MoneyMap Style System - Buttons
+// ============================================================================
+
+// Import variables and mixins for use in button styles
+@use 'variables' as *;
+@use 'mixins' as *;
+
+// ----------------------------------------------------------------------------
+// Base Button Class
+// Shared styles for all button types
+// ----------------------------------------------------------------------------
+
+.button,
+.btn {
+  @include button-base;
+}
+
+// ----------------------------------------------------------------------------
+// Button Variants
+// ----------------------------------------------------------------------------
+
+.button-primary,
+.btn-primary {
+  background: $primary;
+  color: white;
+
+  &:hover {
+    background: $primary-hover;
+  }
+
+  &:focus {
+    @include focus-ring;
+  }
+}
+
+.button-secondary,
+.btn-secondary {
+  background: $bg-alt;
+  color: $text-tertiary;
+
+  &:hover {
+    background: $border-light;
+  }
+
+  &:focus {
+    outline: none;
+    border: 1px solid $primary;
+  }
+}
+
+.button-danger,
+.btn-danger {
+  background: $danger;
+  color: white;
+
+  &:hover {
+    background: $danger-hover;
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Back Button
+// Text-only link-style button used in edit views
+// ----------------------------------------------------------------------------
+
+.back-button {
+  background: none;
+  border: none;
+  color: $primary;
+  font-size: $font-base-lg;
+  font-weight: $font-medium;
+  cursor: pointer;
+  padding: $spacing-sm 0;
+  margin-bottom: $spacing-sm;
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus {
+    outline: 2px solid $primary;
+    outline-offset: 2px;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Action Buttons
+// Special colored-border buttons used on dashboard
+// ----------------------------------------------------------------------------
+
+.action-button {
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-base $spacing-lg;
+  background: $bg-card;
+  border: 2px solid; // Color set via inline styles
+  border-radius: $radius-lg;
+  font-size: $font-base;
+  font-weight: $font-semibold;
+  cursor: pointer;
+  transition: $transition-base;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-lg;
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: $shadow-sm;
+  }
+
+  @include mobile {
+    min-width: 0;
+    padding: $spacing-base $spacing-base;
+    min-height: $touch-target-min;
+  }
+
+  @include mobile-small {
+    padding: $spacing-base $spacing-md;
+    font-size: $font-base-sm;
+  }
+}
+
+.action-button .button-label {
+  white-space: nowrap;
+
+  @include mobile-small {
+    font-size: $font-sm;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Form Actions Container
+// Common layout for button groups in forms
+// ----------------------------------------------------------------------------
+
+.form-actions {
+  display: flex;
+  gap: $spacing-base;
+  justify-content: flex-end;
+
+  @include mobile {
+    flex-direction: column-reverse;
+
+    .button,
+    .btn {
+      width: 100%;
+      padding: $spacing-base;
+      min-height: $touch-target-min;
+    }
+  }
+}

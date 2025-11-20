@@ -38,7 +38,12 @@ watch(
 )
 </script>
 
-<style>
+<style lang="scss">
+// Import shared styles globally (buttons, forms, layout)
+@use '@/styles/buttons';
+@use '@/styles/forms';
+@use '@/styles/layout';
+
 * {
   margin: 0;
   padding: 0;
@@ -46,11 +51,10 @@ watch(
 }
 
 body {
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background-color: #f5f5f5;
-  color: #2c3e50;
-  line-height: 1.6;
+  font-family: $font-family;
+  background-color: $bg-body;
+  color: $text-secondary;
+  line-height: $line-height-base;
 }
 
 #app {
@@ -58,16 +62,16 @@ body {
 }
 
 header {
-  background-color: #42b983;
+  background-color: $primary;
   color: white;
-  padding: 2rem 0;
+  padding: $spacing-3xl 0;
   text-align: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: $shadow-sm;
 }
 
 h1 {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
+  font-size: $font-4xl;
+  margin-bottom: $spacing-sm;
 }
 
 .subtitle {
@@ -76,31 +80,31 @@ h1 {
 }
 
 main {
-  padding: 2rem 1rem;
+  padding: $spacing-3xl $spacing-lg;
 }
 
 .container {
-  max-width: 1200px;
+  max-width: $container-max-width;
   margin: 0 auto;
 }
 
 .input-section {
-  background-color: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+  background-color: $bg-card;
+  padding: $spacing-3xl;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-sm;
+  margin-bottom: $spacing-3xl;
 }
 
 .results-section {
-  margin-top: 2rem;
+  margin-top: $spacing-3xl;
 }
 
 .no-results {
   text-align: center;
-  padding: 3rem;
-  background-color: white;
-  border-radius: 8px;
-  color: #666;
+  padding: $spacing-4xl;
+  background-color: $bg-card;
+  border-radius: $radius-lg;
+  color: $text-light;
 }
 </style>

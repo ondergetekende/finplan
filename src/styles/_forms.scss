@@ -1,0 +1,302 @@
+// ============================================================================
+// MoneyMap Style System - Forms
+// ============================================================================
+
+// Import variables and mixins for use in form styles
+@use 'variables' as *;
+@use 'mixins' as *;
+
+// ----------------------------------------------------------------------------
+// Form Labels
+// ----------------------------------------------------------------------------
+
+label {
+  display: block;
+  font-weight: $font-semibold;
+  margin-bottom: $spacing-sm;
+  color: $text-tertiary;
+  font-size: $font-base;
+}
+
+// ----------------------------------------------------------------------------
+// Form Inputs
+// Standard text, number, date inputs and selects
+// ----------------------------------------------------------------------------
+
+input[type='text'],
+input[type='number'],
+input[type='date'],
+select {
+  @include input-field;
+}
+
+// Specific adjustments for select dropdowns
+select {
+  background-color: $bg-card;
+  cursor: pointer;
+
+  &:disabled {
+    background: $bg-alt;
+    cursor: not-allowed;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Form Groups / Form Fields
+// Container for label + input + help text
+// ----------------------------------------------------------------------------
+
+.form-group {
+  margin-bottom: $spacing-2xl;
+
+  &:last-of-type {
+    margin-bottom: $spacing-3xl;
+  }
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: $spacing-2xl;
+}
+
+// Reduce spacing when checkbox-group is followed by form-group
+.checkbox-group + .form-group {
+  margin-top: $spacing-xs;
+}
+
+// ----------------------------------------------------------------------------
+// Help Text
+// Descriptive text below form inputs
+// ----------------------------------------------------------------------------
+
+.help-text {
+  margin-top: $spacing-sm;
+  font-size: $font-base-sm;
+  color: $text-muted;
+}
+
+// ----------------------------------------------------------------------------
+// Checkboxes and Radio Buttons
+// ----------------------------------------------------------------------------
+
+.checkbox-group {
+  margin-bottom: $spacing-sm;
+
+  label {
+    display: flex;
+    align-items: flex-start;
+    gap: $spacing-sm;
+    font-weight: $font-medium;
+    cursor: pointer;
+  }
+
+  input[type='checkbox'] {
+    margin-top: $spacing-xs;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-base;
+  margin-top: $spacing-sm;
+}
+
+.radio-label {
+  display: flex;
+  align-items: flex-start;
+  gap: $spacing-base;
+  font-weight: $font-medium;
+  cursor: pointer;
+  padding: $spacing-base;
+  border: 2px solid $border-light;
+  border-radius: $radius-md;
+  transition: $transition-base;
+
+  &:hover {
+    border-color: $primary;
+    background: $bg-alt-3;
+  }
+
+  input[type='radio'] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    margin-top: 0.125rem;
+    flex-shrink: 0;
+  }
+
+  &:has(input[type='radio']:checked) {
+    border-color: $primary;
+    background: $primary-light;
+  }
+}
+
+.radio-content {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+  flex: 1;
+}
+
+.radio-title {
+  font-weight: $font-semibold;
+  color: $text-primary;
+  font-size: $font-base;
+}
+
+.radio-description {
+  font-weight: $font-normal;
+  color: $text-muted;
+  font-size: $font-sm;
+  line-height: $line-height-tight;
+}
+
+// ----------------------------------------------------------------------------
+// Toggle / Switch (Checkbox)
+// Used for inflation toggle on dashboard
+// ----------------------------------------------------------------------------
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: $spacing-base;
+  cursor: pointer;
+  font-weight: $font-medium;
+  color: $text-primary;
+  font-size: $font-base;
+
+  span {
+    user-select: none;
+  }
+}
+
+.toggle-checkbox {
+  width: 1.125rem;
+  height: 1.125rem;
+  cursor: pointer;
+  margin: 0;
+}
+
+.toggle-hint {
+  margin: $spacing-sm 0 0 2rem;
+  font-size: $font-sm;
+  color: $text-muted;
+}
+
+// ----------------------------------------------------------------------------
+// Form Sections
+// Grouped form content with background
+// ----------------------------------------------------------------------------
+
+.form-section {
+  margin: $spacing-3xl 0;
+  padding: $spacing-2xl;
+  background: $bg-alt-3;
+  border-radius: $radius-md;
+
+  h3 {
+    margin: 0 0 $spacing-lg 0;
+    font-size: $font-md;
+    font-weight: $font-semibold;
+    color: $text-primary;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Validation - Warnings
+// Yellow warning messages
+// ----------------------------------------------------------------------------
+
+.warnings {
+  background: $warning-bg;
+  border: 1px solid $warning;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-2xl;
+}
+
+.warning-text {
+  margin: 0;
+  font-size: $font-base-sm;
+  color: $warning-dark;
+
+  & + .warning-text {
+    margin-top: $spacing-sm;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Calculated Values Display
+// Green success-style display for calculated fields (EditDebtView)
+// ----------------------------------------------------------------------------
+
+.calculated-values {
+  background: $success-bg;
+  border: 1px solid $success;
+  border-radius: $radius-md;
+  padding: $spacing-2xl;
+  margin: $spacing-2xl 0;
+
+  h3 {
+    margin: 0 0 $spacing-lg 0;
+    font-size: $font-base-lg;
+    font-weight: $font-semibold;
+    color: $success-darker;
+  }
+}
+
+.calculated-field {
+  padding: $spacing-base 0;
+  border-bottom: 1px solid $success-light;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  .label {
+    font-weight: $font-medium;
+    color: $success-darker;
+    display: block;
+    margin-bottom: $spacing-xs;
+  }
+
+  .value {
+    font-weight: $font-bold;
+    font-size: $font-lg;
+    color: $success-dark;
+    display: block;
+    margin-bottom: $spacing-xs;
+  }
+
+  .help-text {
+    margin: $spacing-xs 0 0 0;
+    font-size: $font-sm;
+    color: $success-dark;
+    font-weight: $font-normal;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Edit Form Container
+// Common styling for edit view forms
+// ----------------------------------------------------------------------------
+
+.edit-form {
+  background: $bg-card;
+  border: 1px solid $border-light;
+  border-radius: $radius-lg;
+  padding: $spacing-3xl;
+
+  @include mobile {
+    padding: $spacing-2xl;
+  }
+
+  @include mobile-small {
+    padding: $spacing-xl;
+  }
+}
